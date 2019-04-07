@@ -1,0 +1,36 @@
+CS452/EE465/CS552/EE505 Computer Graphics Project #2
+
+For Project 2 you are required to create an interactive 3D scene with 3D graphics in WebGL. Note: this is a full 3D project. This means that you cannot work in 2D any longer. While a game is not necessary, you are welcome to create a game if you like, as all of the requirements discussed can be incorporated into a game.
+
+You are required to work in teams of 2 students. Student teams will be re-issued for this project, and will be different from Project 1, unless you wish to retain your Project 1 team. If all students in the project 1 team wish to continue, I must receive an email by end of day Friday (March 15) with the names of all team members from the project 1 team (and with all students emails included in cc —- this is important as I require the consent of all students in the team). Else, I will re-assign students to new teams.
+
+
+Requirements for your interactive scene:
+1) The project must model a realistic scene. Examples of scenes: a dining table with chairs and dinnerware, an office desk with a computer and clutter, a room with furniture. This is a chance for you folks to exhibit your creativity and design ideas, so feel free to explore!
+2) The project should have at least 4 polyhedra. Think creatively: you have chairs that can take 6 polyhedra, you have chairs that may take just three. 
+3) The project should have at least 3 distinct ‘pieces’. Example: a table and a chair are 2 distinct pieces. The ground plane is not a piece, so having a chair, a table, and the ground does not fulfill this requirement.
+4) The user should be able to interact with at least one of your pieces using any number of transformations: rotations, translations, and scaling in a meaningful way. For instance, in a dining table scene, the user should be able to pull out the chair, move it around the scene, and rotate the chair about its center. All the single polyhedron transformations that we covered in class can be applied to more than one shape simultaneously. It is up to you how the user interacts with the scene. The user should be able to interact with an entire piece, unless interacting with just a part of a piece is absolutely necessary for your creative idea, and you have consulted with the instructor on this.
+5) There should be at least 2 lights in the scene, at least one of which should create a specular reflection.
+6) There should be at least 2 textures. It is up to you how you use them.
+7) You must display your scene using a perspective projection.
+8) The interaction controls should be intuitive to use and you must have a description of the controls in a README.
+9) Provide a README on how you implemented your scene. Your README must be named ‘README.txt’. If you implement a game, describe the scoring system and win condition in the README file.
+
+Note: you are NOT permitted to use the functions ‘lookAt()’, ‘rotate()’, ‘scale()’, ‘translate()’, ‘frustum()’, ‘ortho()’, and/or ‘perspective()’ implemented by the book authors in MV.js. If you use these functions, you stand to lose points for the operations these functions are substituted in for. 
+
+
+EXTRA CREDIT: Students are entitled to 12 points worth of extra credit on the project. To get these points, you must implement up to three of the techniques discussed in the 'Getting Closer to Reality' series of slides, e.g., shadow mapping, reflection mapping, bump mapping, or curves and surfaces. Each technique is worth 4 points of extra credit.
+
+Scoring rubric (out of 50 points, scaled down to 18):
+1) 12 points for creating your scene (realistic, at least 4 polyhedra, at least 3 pieces)
+2) 6 points for user interaction.
+3) 12 points for lighting the scene.
+4) 12 points for texturing the shapes in your scene.
+5) 6 points for the perspective projection.
+6) 2 points for the README description, should be named README.txt.
+
+Deliverables: Store all files and folders you use (including your Common/ folder or any folders that contain your Common/ folder) in a single directory called ‘project2/‘. Zip ‘project2/‘ into a single .zip file called ‘project2.zip’. Please submit ‘project2.zip’ to Moodle by the due date. If you do not follow these instructions, you stand to lose all points pertaining to running of the code, i.e., all points for parts 1 to 6 in the scoring rubric. 
+
+
+
+
