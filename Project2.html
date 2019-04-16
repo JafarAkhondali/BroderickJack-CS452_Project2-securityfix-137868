@@ -280,10 +280,11 @@
         // light represents the final light intensity
 
         /* Final reflection: sum of ambient diffuse and specular */
-        R = clamp((Ra + Rd + Rs) * source1 + (Ra2 + Rd2 + Rs2) * source2, 0.0, 1.0);
+        // R = clamp((Ra + Rd + Rs) * source1 + (Ra2 + Rd2 + Rs2) * source2, 0.0, 1.0);
 
         /* Set the fragment color */
-        gl_FragColor = vec4(R[0], R[1], R[2], 1.0);
+        // gl_FragColor = vec4(R[0], R[1], R[2], 1.0);
+        gl_FragColor = vec4(0.7, 0.2, 0.2, 1.0);
     }
 
 </script>
