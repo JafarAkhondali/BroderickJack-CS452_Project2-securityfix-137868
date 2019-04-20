@@ -4,9 +4,10 @@
 var vertices;
 var vertices4 = [];
 var indices = [];
-var vertexNormals;
+var vertexNormals = [];
 var gl;
 var myShaderProgram;
+var geometry;
 
 /* Global Uniforms */
 var MUniform;
@@ -142,11 +143,21 @@ function load_object() {
     	function ( object ) {
             /* We get the vertices of all of the points */
             /* Each face is stored in order, so some points are repeated */
-            vertices = object.children[0].geometry.attributes.position.array;
-            vertexNormals = object.children[0].geometry.attributes.normal.array;
-            numTriangles = Math.floor(vertices/9.0);
+            // vertices = object.children[0].geometry.attributes.position.array;
+            // vertexNormals = object.children[0].geometry.attributes.normal.array;
+            // numTriangles = Math.floor(vertices/9.0);
 
-            console.log(vertices);
+            // console.log(vertices);
+            // console.log(object.children[0].geometry);
+            /* Create a geometry object from a buffer geometry */
+            geometry = new THREE.Geometry().fromBufferGeometry( object.children[0].geometry );
+            // console.log("Geometry: ", geometry);
+
+            /* Get the vertices from the geometry object */
+            // console.log(geometry.vertices);
+
+            vertices = geometry.vertices;
+
             // console.log(Math.max.apply(null,vertices));
             // console.log(Math.min(vertices));
 
@@ -173,15 +184,34 @@ function send_vertices() {
     /* We need to add 1.0 to all of the vertices because it is going to be looking for a vec4 in the vertex shader for position */
     var i = 0;
     var j = 0;
-    for(i = 0; i < ((vertices.length)/3); i++) {
-        for(j = i*3; j<(i*3)+3; j++) {
-            vertices4.push(vertices[j]);
-        }
+    for(i = 0; i < vertices.length; i++) {
+        vertices4.push(vertices[i].x);
+        vertices4.push(vertices[i].y);
+        vertices4.push(vertices[i].z);
         vertices4.push(1.0);
         indices.push(i); /* The vertices for each face are supposed to be repeated so they should all be in order */
     }
 
     // console.log("vertices4: ", vertices4);
+
+    /* Now we need to create a vector for the indices */
+    var faces = geometry.faces;
+    console.log(faces);
+    // console.log(faces[1].a);
+    for(i = 0; i < faces.length; i++) {
+        indices.push(faces[i].a);
+        // console.log(indices);
+        indices.push(faces[i].b);
+        indices.push(faces[i].c);
+    }
+
+    // console.log("indices: ", indices);
+
+    console.log(geometry);
+
+    /* Get the vertex normals from the geometry */
+    /* We need to loop through all of the vertex normals in the faces */
+
 
     /* Create the index buffer */
     var indexBuffer = gl.createBuffer();
