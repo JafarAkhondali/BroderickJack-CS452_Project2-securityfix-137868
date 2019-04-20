@@ -184,6 +184,9 @@ function send_vertices() {
     /* We need to add 1.0 to all of the vertices because it is going to be looking for a vec4 in the vertex shader for position */
     var i = 0;
     var j = 0;
+
+    var faces = geometry.faces;
+
     for(i = 0; i < vertices.length; i++) {
         vertices4.push(vertices[i].x);
         vertices4.push(vertices[i].y);
@@ -196,18 +199,33 @@ function send_vertices() {
 
     /* Now we need to create a vector for the indices */
     var faces = geometry.faces;
-    console.log(faces);
+    // console.log(faces);
     // console.log(faces[1].a);
+    var v_n = [];
     for(i = 0; i < faces.length; i++) {
         indices.push(faces[i].a);
         // console.log(indices);
         indices.push(faces[i].b);
         indices.push(faces[i].c);
+
+        /* We need to get the vertex normal for each of the vertices in the face */
+        v_n[faces[i].a] = faces[i].vertexNormals[0];
+        v_n[faces[i].b] = faces[i].vertexNormals[1];
+        v_n[faces[i].c] = faces[i].vertexNormals[2];
     }
 
+    /* We need to get the values from the vertexNormals */
+    for(i = 0; i < v_n.length; i++) {
+        vertexNormals.push(v_n[i].x);
+        vertexNormals.push(v_n[i].y);
+        vertexNormals.push(v_n[i].z);
+    }
+
+    // console.log(vertexNormals);
+    // console.log(flatten(vertexNormals));
     // console.log("indices: ", indices);
 
-    console.log(geometry);
+    // console.log(geometry);
 
     /* Get the vertex normals from the geometry */
     /* We need to loop through all of the vertex normals in the faces */
