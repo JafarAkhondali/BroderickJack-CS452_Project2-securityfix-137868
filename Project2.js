@@ -2,10 +2,18 @@
 /* April 10, 2019 */
 /* CS468 Project 2 */
 
+/* Resources
+
+irex: https://www.turbosquid.com/3d-models/3d-indominus-rex-rig-irex-1182227
+coke bottle: https://www.turbosquid.com/FullPreview/Index.cfm/ID/540827
+
+*/
+
 var gl;
 var numVertices;
 var numTriangles;
 var myShaderProgram;
+var vertexScaling; /* Used to scale the vertices to make sure the object fits */
 
 /* Global Uniforms */
 var MUniform;
@@ -256,31 +264,57 @@ function initGL() {
     projection_select = 1; /* 1: Orthographic 0: Perspective */
 
     /* We need to load the object */
-    load_object();
+    var vertex_scalings = [1.0, 1.0, 10.0, 1.0];
+    var object_names = ['coke_bottle.OBJ', 'Irex_obj.obj', 'TV.obj', 'apple.obj'];
+    // var object_names = ['Irex_obj.obj'];
+
+    var i = 3;
+    // for(i = 0; i < object_names.length; i++) {
+    //     load_object(object_names[i]);
+    // }
+    vertexScaling = vertex_scalings[i];
+    load_object(object_names[i]);
 };
 
 
-function load_object() {
+function load_object(object_name) {
     // instantiate a loader
+    var children;
     var loader = new THREE.OBJLoader();
 
     // load a resource
     loader.load(
     	// resource URL
-    	'coke_bottle.OBJ',
+    	object_name,
 
     	// called when resource is loaded
     	function ( object ) {
+            /* Need to call draw all of the children
             /* We get the vertices of all of the points */
-
+            console.log(object);
             /* Create a geometry object from a buffer geometry */
-            geometry = new THREE.Geometry().fromBufferGeometry( object.children[0].geometry );
+            // geometry = new THREE.Geometry().fromBufferGeometry( object.children[0].geometry );
 
-            /* Get the vertices from the geometry object */
-            vert = geometry.vertices;
+            children = object.children;
 
-            /* Next, call a function to process the loaded geometry object */
-            process_object();
+            var i =0;
+            for(i = 0; i < children.length; i++) {
+                    geometry = new THREE.Geometry().fromBufferGeometry(children[i].geometry);
+
+                    // console.log(geometry);
+                    /* Get the vertices from the geometry object */
+                    vert = geometry.vertices;
+
+                    /* Next, call a function to process the loaded geometry object */
+                    process_object();
+            }
+            //
+            // console.log(geometry);
+            // /* Get the vertices from the geometry object */
+            // vert = geometry.vertices;
+            //
+            // /* Next, call a function to process the loaded geometry object */
+            // process_object();
 
     	},
     	// called when loading is in progresses
@@ -306,9 +340,9 @@ function process_object() {
     var faces = geometry.faces;
 
     for(i = 0; i < vert.length; i++) {
-        vertices.push(vert[i].x);
-        vertices.push(vert[i].y);
-        vertices.push(vert[i].z);
+        vertices.push(vert[i].x * vertexScaling);
+        vertices.push(vert[i].y * vertexScaling);
+        vertices.push(vert[i].z * vertexScaling);
         vertices.push(1.0);
     }
 
