@@ -22,6 +22,9 @@ var MVitUniform; /* Uniform for modelviewInverseTranspose */
 var PosUniform;  /* Uniform for position of the point light source */
 var PosUniform2;  /* Uniform for position of the point light source */
 
+/* Texture Uniform */
+var TexFlagUniform;
+
 /* Incident Intensity Uniforms: Point Light Source */
 var IaUniform;
 var IdUniform;
@@ -60,6 +63,8 @@ var vert = [];
 var vertices = [];
 var indices = [];
 var vertexNormals = [];
+var texCoordinates = [];
+var use_texture;
 
 function initGL() {
     var canvas = document.getElementById( "gl-canvas" );
@@ -94,174 +99,195 @@ function initGL() {
     Source2Uniform = gl.getUniformLocation(myShaderProgram, "source2");
     AlphaUniform = gl.getUniformLocation(myShaderProgram, "alpha");
     ToggleSpecularUniform = gl.getUniformLocation(myShaderProgram, "toggleSpecular");
-
-    // Step 1: Position the camera using the look at method
-
-    // Define eye (use vec3 in MV.js)
-    var eye = vec3(100.0, 50.0, 50.0);
-
-    // Define at point (use vec3 in MV.js)
-    var at_point = vec3(0.0, 0.0, 0.0); /* Use the look at point at the origin */
-
-    // Define vup vector (use vec3 in MV.js)
-    var vup = vec3(0.0, 1.0, 0.0); /* Camera is vertical - May need to change to point at the object better */
-
-    // Obtain n (use subtract and normalize in MV.js)
-    var n = normalize(subtract(eye, at_point));
-
-    // Obtain u (use cross and normalize in MV.js)
-    var u = normalize(cross(vup, n));
-
-    // Obtain v (use cross and normalize in MV.js)
-    var v = normalize(cross(n, u));
-
-    // Set up Model-View matrix M and send M as uniform to shader
-    var M = [u[0],
-             v[0],
-             n[0],
-             0,
-                u[1],
-                v[1],
-                n[1],
-                0,
-                        u[2],
-                        v[2],
-                        n[2],
-                        0,
-                            -1*eye[0]*u[0] - eye[1]*u[1] - eye[2]*u[2],
-                            -1*eye[0]*v[0] - eye[1]*v[1] - eye[2]*v[2],
-                            -1*eye[0]*n[0] - eye[1]*n[1] - eye[2]*n[2],
-                            1.0];
-
-    var modelviewInverseTranspose =     [u[0],
-                                         v[0],
-                                         n[0],
-                                         eye[0],
-                                            u[1],
-                                            v[1],
-                                            n[1],
-                                            eye[1],
-                                                    u[2],
-                                                    v[2],
-                                                    n[2],
-                                                    eye[2],
-                                                        0.0,
-                                                        0.0,
-                                                        0.0,
-                                                        1.0];
+    TexFlagUniform = gl.getUniformLocation(myShaderProgram, "use_texture");
 
 
-    /* Send the model view matrix and the modelview inverse transpose matrix */
-    gl.uniformMatrix4fv(MUniform, false, M);
-    gl.uniformMatrix4fv(MVitUniform, false, modelviewInverseTranspose);
+    /* Decide if a texture is being used or not */
+    use_texture = -1.0;
+    gl.uniform1f(TexFlagUniform, use_texture);
 
-    // Set up the first light source and send the variables
-    // to the shader program (NEEDS CODE, VARIABLES DEPEND ON LIGHT TYPE)
-    /* Point light source at point p */
-    var p = vec3(100.0, 100.0, 0.0);
-    /* Spot light source at point p0 */
-    var p02 = vec3(-135.0, -135.0, 0.0);
-    gl.uniform3f(PosUniform, p[0], p[1], p[2]);
-    gl.uniform3f(PosUniform2, p02[0], p02[1], p02[2]);
+    // if(use_texture < 1) {
+        // Step 1: Position the camera using the look at method
 
-    /* Incident Components for the first light source */
-    var Ia = vec3(0.8, 0.3, 0.1);
-    var Id = vec3(0.7, 0.3, 0.7);
-    var Is = vec3(0.4, 0.4, 0.4);
+        // Define eye (use vec3 in MV.js)
+        var eye = vec3(100.0, 50.0, 50.0);
 
-    /* Incident components for the spotlight */
-    var Ia2 = vec3(0.3, 0.8, 0.8);
-    var Id2 = vec3(0.3, 0.7, 0.7);
-    var Is2 = vec3(0.4, 0.4, 0.4);
+        // Define at point (use vec3 in MV.js)
+        var at_point = vec3(0.0, 0.0, 0.0); /* Use the look at point at the origin */
 
-    /* Spot light vector of maximum intensity */
-    var u_spotlight = normalize(vec3(-0.7, -0.9, 0.0));
-    gl.uniform3f(UUniform, u_spotlight[0], u_spotlight[1], u_spotlight[2]);
+        // Define vup vector (use vec3 in MV.js)
+        var vup = vec3(0.0, 1.0, 0.0); /* Camera is vertical - May need to change to point at the object better */
 
-    /* Send the uniforms */
-    gl.uniform3f(IaUniform, Ia[0], Ia[1], Ia[2]);
-    gl.uniform3f(IdUniform, Id[0], Id[1], Id[2]);
-    gl.uniform3f(IsUniform, Is[0], Is[1], Is[2]);
-    gl.uniform3f(IaUniform2, Ia2[0], Ia2[1], Ia2[2]);
-    gl.uniform3f(IdUniform2, Id2[0], Id2[1], Id2[2]);
-    gl.uniform3f(IsUniform2, Is2[0], Is2[1], Is2[2]);
+        // Obtain n (use subtract and normalize in MV.js)
+        var n = normalize(subtract(eye, at_point));
 
-    /* Setup the object specific variables */
-    var ka = vec3(0.6, 0.6, 0.1);
-    var kd = vec3(0.8, 0.8, 0.8);
-    var ks = vec3(0.8, 0.8, 0.8);
+        // Obtain u (use cross and normalize in MV.js)
+        var u = normalize(cross(vup, n));
 
-    /* Send the variables to the unifomrs */
-    gl.uniform3f(KaUniform, ka[0], ka[1], ka[2]);
-    gl.uniform3f(KdUniform, kd[0], kd[1], kd[2]);
-    gl.uniform3f(KsUniform, ks[0], ks[1], ks[2]);
+        // Obtain v (use cross and normalize in MV.js)
+        var v = normalize(cross(n, u));
 
-    /* Send alpha uniform */
-    var alpha = 10.0;
-    gl.uniform1f(AlphaUniform, alpha)
+        // Set up Model-View matrix M and send M as uniform to shader
+        var M = [u[0],
+                 v[0],
+                 n[0],
+                 0,
+                    u[1],
+                    v[1],
+                    n[1],
+                    0,
+                            u[2],
+                            v[2],
+                            n[2],
+                            0,
+                                -1*eye[0]*u[0] - eye[1]*u[1] - eye[2]*u[2],
+                                -1*eye[0]*v[0] - eye[1]*v[1] - eye[2]*v[2],
+                                -1*eye[0]*n[0] - eye[1]*n[1] - eye[2]*n[2],
+                                1.0];
 
-    /* Turn on both sources to start */
-    source1 = 1;
-    source2 = 1;
-    toggleSpecular = 1;
+        var modelviewInverseTranspose =     [u[0],
+                                             v[0],
+                                             n[0],
+                                             eye[0],
+                                                u[1],
+                                                v[1],
+                                                n[1],
+                                                eye[1],
+                                                        u[2],
+                                                        v[2],
+                                                        n[2],
+                                                        eye[2],
+                                                            0.0,
+                                                            0.0,
+                                                            0.0,
+                                                            1.0];
 
-    gl.uniform1f(Source1Uniform, source1);
-    gl.uniform1f(Source2Uniform, source2);
-    gl.uniform1f(ToggleSpecularUniform, toggleSpecular);
-    // Step 2: Set up orthographic and perspective projections
 
-    // Define left plane
-    var left = -250.0;
-    // Define right plane
-    var right = 250.0;
-    // Define top plane
-    var top = 400.0;
-    // Define bottom plane
-    var bottom = -400.0;
-    // Define near plane
-    var near = 10.0;
-    // Define far plane
-    var far = 400.0;
+        /* Send the model view matrix and the modelview inverse transpose matrix */
+        gl.uniformMatrix4fv(MUniform, false, M);
+        gl.uniformMatrix4fv(MVitUniform, false, modelviewInverseTranspose);
 
-    /* Set up orthographic projection matrix P_orth using above planes */
-    P_ortho = [2.0/ (right-left),
-                   0.0,
-                   0.0,
-                   0.0,
-                    0.0,
-                    2.0/(top-bottom),
-                    0.0,
-                    0.0,
+        // Set up the first light source and send the variables
+        // to the shader program (NEEDS CODE, VARIABLES DEPEND ON LIGHT TYPE)
+        /* Point light source at point p */
+        var p = vec3(100.0, 100.0, 0.0);
+        /* Spot light source at point p0 */
+        var p02 = vec3(-135.0, -135.0, 0.0);
+        gl.uniform3f(PosUniform, p[0], p[1], p[2]);
+        gl.uniform3f(PosUniform2, p02[0], p02[1], p02[2]);
+
+        /* Incident Components for the first light source */
+        var Ia = vec3(0.8, 0.3, 0.1);
+        var Id = vec3(0.7, 0.3, 0.7);
+        var Is = vec3(0.4, 0.4, 0.4);
+
+        /* Incident components for the spotlight */
+        var Ia2 = vec3(0.3, 0.8, 0.8);
+        var Id2 = vec3(0.3, 0.7, 0.7);
+        var Is2 = vec3(0.4, 0.4, 0.4);
+
+        /* Spot light vector of maximum intensity */
+        var u_spotlight = normalize(vec3(-0.7, -0.9, 0.0));
+        gl.uniform3f(UUniform, u_spotlight[0], u_spotlight[1], u_spotlight[2]);
+
+        /* Send the uniforms */
+        gl.uniform3f(IaUniform, Ia[0], Ia[1], Ia[2]);
+        gl.uniform3f(IdUniform, Id[0], Id[1], Id[2]);
+        gl.uniform3f(IsUniform, Is[0], Is[1], Is[2]);
+        gl.uniform3f(IaUniform2, Ia2[0], Ia2[1], Ia2[2]);
+        gl.uniform3f(IdUniform2, Id2[0], Id2[1], Id2[2]);
+        gl.uniform3f(IsUniform2, Is2[0], Is2[1], Is2[2]);
+
+        /* Setup the object specific variables */
+        var ka = vec3(0.6, 0.6, 0.1);
+        var kd = vec3(0.8, 0.8, 0.8);
+        var ks = vec3(0.8, 0.8, 0.8);
+
+        /* Send the variables to the unifomrs */
+        gl.uniform3f(KaUniform, ka[0], ka[1], ka[2]);
+        gl.uniform3f(KdUniform, kd[0], kd[1], kd[2]);
+        gl.uniform3f(KsUniform, ks[0], ks[1], ks[2]);
+
+        /* Send alpha uniform */
+        var alpha = 10.0;
+        gl.uniform1f(AlphaUniform, alpha)
+
+        /* Turn on both sources to start */
+        source1 = 1;
+        source2 = 1;
+        toggleSpecular = 1;
+
+        gl.uniform1f(Source1Uniform, source1);
+        gl.uniform1f(Source2Uniform, source2);
+        gl.uniform1f(ToggleSpecularUniform, toggleSpecular);
+        // Step 2: Set up orthographic and perspective projections
+
+        // Define left plane
+        var left = -250.0;
+        // Define right plane
+        var right = 250.0;
+        // Define top plane
+        var top = 400.0;
+        // Define bottom plane
+        var bottom = -400.0;
+        // Define near plane
+        var near = 10.0;
+        // Define far plane
+        var far = 400.0;
+
+        /* Set up orthographic projection matrix P_orth using above planes */
+        P_ortho = [2.0/ (right-left),
+                       0.0,
+                       0.0,
+                       0.0,
+                        0.0,
+                        2.0/(top-bottom),
                         0.0,
                         0.0,
-                        -2.0/(far-near),
-                        0.0,
-                            -(right+left)/(right-left),
-                            -(top+bottom)/(top-bottom),
-                            -(far+near)/(far-near),
-                            1];
-    // Set up perspective projection matrix P_persp using above planes
-    P_persp = [ (2.0 * near)/(right - left),
-                0.0,
-                0.0,
-                0.0,
-                    0.0,
-                    (2*near)/ (top - bottom),
-                    0.0,
-                    0.0,
-                        (right+left) / (right-left),
-                        (top+bottom)/ (top - bottom),
-                        -(far+near) / (far - near),
-                        -1.0,
                             0.0,
                             0.0,
-                            -(2.0*far * near) / (far-near),
-                            0.0];
+                            -2.0/(far-near),
+                            0.0,
+                                -(right+left)/(right-left),
+                                -(top+bottom)/(top-bottom),
+                                -(far+near)/(far-near),
+                                1];
+        // Set up perspective projection matrix P_persp using above planes
+        P_persp = [ (2.0 * near)/(right - left),
+                    0.0,
+                    0.0,
+                    0.0,
+                        0.0,
+                        (2*near)/ (top - bottom),
+                        0.0,
+                        0.0,
+                            (right+left) / (right-left),
+                            (top+bottom)/ (top - bottom),
+                            -(far+near) / (far - near),
+                            -1.0,
+                                0.0,
+                                0.0,
+                                -(2.0*far * near) / (far-near),
+                                0.0];
 
-    // Use a flag to determine which matrix to send as uniform to shader
-    // flag value should be changed by a button that switches between
-    // orthographic and perspective projections
-    projection_select = 1; /* 1: Orthographic 0: Perspective */
+        // Use a flag to determine which matrix to send as uniform to shader
+        // flag value should be changed by a button that switches between
+        // orthographic and perspective projections
+        projection_select = 1; /* 1: Orthographic 0: Perspective */
+
+    // } else {
+    if(use_texture > 0.0) {
+        /* Create a buffer for the texture */
+        var texture1 = document.getElementById("texture1");
+        textureImage = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, textureImage);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); /* Must flip because images assume the origin is in the top left */
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, texture1); /* Sends data to the GPU */
+        /* We will use linear mipmapping to avoid undersampling and edges */
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+        gl.generateMipmap(gl.TEXTURE_2D);
+    }
 
     /* We need to load the object */
     var vertex_scalings = [1.0, 1.0, 10.0, 1.0];
@@ -274,6 +300,11 @@ function initGL() {
     // }
     vertexScaling = vertex_scalings[i];
     load_object(object_names[i]);
+    // createOctahedron();
+
+
+
+    // drawObject();
 };
 
 
@@ -301,21 +332,13 @@ function load_object(object_name) {
             for(i = 0; i < children.length; i++) {
                     geometry = new THREE.Geometry().fromBufferGeometry(children[i].geometry);
 
-                    // console.log(geometry);
+                    console.log(geometry);
                     /* Get the vertices from the geometry object */
                     vert = geometry.vertices;
 
                     /* Next, call a function to process the loaded geometry object */
                     process_object();
             }
-            //
-            // console.log(geometry);
-            // /* Get the vertices from the geometry object */
-            // vert = geometry.vertices;
-            //
-            // /* Next, call a function to process the loaded geometry object */
-            // process_object();
-
     	},
     	// called when loading is in progresses
     	function ( xhr ) {
@@ -339,62 +362,292 @@ function process_object() {
 
     var faces = geometry.faces;
 
-    for(i = 0; i < vert.length; i++) {
-        vertices.push(vert[i].x * vertexScaling);
-        vertices.push(vert[i].y * vertexScaling);
-        vertices.push(vert[i].z * vertexScaling);
-        vertices.push(1.0);
+    if(use_texture < 0) {
+        for(i = 0; i < vert.length; i++) {
+            vertices.push(vert[i].x * vertexScaling);
+            vertices.push(vert[i].y * vertexScaling);
+            vertices.push(vert[i].z * vertexScaling);
+            vertices.push(1.0);
+        }
+
+        /* Now we need to create a vector for the indices */
+        var faces = geometry.faces;
+        // console.log(faces);
+        // console.log(faces[1].a);
+        var v_n = [];
+        for(i = 0; i < faces.length; i++) {
+            indices.push(faces[i].a);
+            indices.push(faces[i].b);
+            indices.push(faces[i].c);
+
+            /* We need to get the vertex normal for each of the vertices in the face */
+            v_n[faces[i].a] = faces[i].vertexNormals[0];
+            v_n[faces[i].b] = faces[i].vertexNormals[1];
+            v_n[faces[i].c] = faces[i].vertexNormals[2];
+        }
+
+        numTriangles = faces.length;
+
+        /* We need to get the values from the vertexNormals */
+        for(i = 0; i < v_n.length; i++) {
+            vertexNormals.push(v_n[i].x);
+            vertexNormals.push(v_n[i].y);
+            vertexNormals.push(v_n[i].z);
+        }
+
+        /* We now need to send the values via buffers */
+        var indexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+
+        /* Create a buffer for the vertex normals */
+        var vertexNormal = gl.getAttribLocation(myShaderProgram, "vertexNormal");
+        var normalsBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, normalsBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(vertexNormals), gl.STATIC_DRAW);
+        gl.vertexAttribPointer(vertexNormal, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(vertexNormal);
+
+        /* Create, bind, and send data to the buffer for the vertices */
+        var vertexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW);
+
+        var vertexPosition = gl.getAttribLocation(myShaderProgram, "vertexPosition");
+        gl.vertexAttribPointer(vertexPosition, 4, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(vertexPosition);
+    } else {
+        /* We are going to use the texture */
+        var indexCounter = 0;
+        var v1, v2, v3;
+        var face;
+        var all_tex = geometry.faceVertexUvs[0];
+        console.log("all_tex: ", all_tex);
+        var face_tex;
+        for(i = 0; i < faces.length; i++) {
+            face = faces[i];
+            /* We must get the three vertices for each face */
+            v1 = vert[face.a];
+            v2 = vert[face.b];
+            v3 = vert[face.c];
+            vertices.push(v1.x);
+            vertices.push(v1.y);
+            vertices.push(v1.z);
+            vertices.push(1.0);
+            vertices.push(v2.x);
+            vertices.push(v2.y);
+            vertices.push(v2.z);
+            vertices.push(1.0);
+            vertices.push(v3.x);
+            vertices.push(v3.y);
+            vertices.push(v3.z);
+            vertices.push(1.0);
+
+            /* Now we need to add the texture coordinates for each vertex */
+            /* We have an array of texture coordianates for each face that we need to index */
+            face_tex = all_tex[i];
+            texCoordinates.push(face_tex[0].x);
+            texCoordinates.push(face_tex[0].y);
+            texCoordinates.push(face_tex[1].x);
+            texCoordinates.push(face_tex[1].y);
+            texCoordinates.push(face_tex[2].x);
+            texCoordinates.push(face_tex[2].y);
+
+            /* Now we need to add the index of the vertex (this will just increment) */
+            indices.push(indexCounter++);
+            indices.push(indexCounter++);
+            indices.push(indexCounter++);
+        }
+
+        /* We need to send the texture */
+        /* Create a buffer for the texture */
+        var texture1 = document.getElementById("texture1");
+        textureImage = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, textureImage);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); /* Must flip because images assume the origin is in the top left */
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, texture1); /* Sends data to the GPU */
+        /* We will use linear mipmapping to avoid undersampling and edges */
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+        gl.generateMipmap(gl.TEXTURE_2D);
+
+        /* Now we need to send all of the data */
+        var vertexBuffer = gl.createBuffer();
+        gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
+        gl.bufferData( gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW);
+        console.log(vertices);
+
+        var myPosition = gl.getAttribLocation( myShaderProgram, "vertexPosition" );
+        gl.vertexAttribPointer(myPosition, 4, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(myPosition);
+
+        var iBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
+        gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(indices), gl.STATIC_DRAW);
+        console.log(indices);
+        /* Create attribute for texture coordinates */
+        var textureCoordinateBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordinateBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(texCoordinates), gl.STATIC_DRAW);
+        console.log("texCoordinates: ", texCoordinates);
+
+        var texCoordinate = gl.getAttribLocation(myShaderProgram, "textureCoordinate");
+        gl.vertexAttribPointer(texCoordinate, 2, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(texCoordinate);
     }
-
-    /* Now we need to create a vector for the indices */
-    var faces = geometry.faces;
-    // console.log(faces);
-    // console.log(faces[1].a);
-    var v_n = [];
-    for(i = 0; i < faces.length; i++) {
-        indices.push(faces[i].a);
-        indices.push(faces[i].b);
-        indices.push(faces[i].c);
-
-        /* We need to get the vertex normal for each of the vertices in the face */
-        v_n[faces[i].a] = faces[i].vertexNormals[0];
-        v_n[faces[i].b] = faces[i].vertexNormals[1];
-        v_n[faces[i].c] = faces[i].vertexNormals[2];
-    }
-
-    numTriangles = faces.length;
-
-    /* We need to get the values from the vertexNormals */
-    for(i = 0; i < v_n.length; i++) {
-        vertexNormals.push(v_n[i].x);
-        vertexNormals.push(v_n[i].y);
-        vertexNormals.push(v_n[i].z);
-    }
-
-    /* We now need to send the values via buffers */
-    var indexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
-
-    /* Create a buffer for the vertex normals */
-    var vertexNormal = gl.getAttribLocation(myShaderProgram, "vertexNormal");
-    var normalsBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, normalsBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(vertexNormals), gl.STATIC_DRAW);
-    gl.vertexAttribPointer(vertexNormal, 3, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vertexNormal);
-
-    /* Create, bind, and send data to the buffer for the vertices */
-    var vertexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW);
-
-    var vertexPosition = gl.getAttribLocation(myShaderProgram, "vertexPosition");
-    gl.vertexAttribPointer(vertexPosition, 4, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vertexPosition);
+    /* Try rendering the object with the texture coordinate if the flag is set */
 
     // render the object
     drawObject();
+}
+
+function createOctahedron() {
+    // This function creates the coordinates for a regular octahedron
+    h = 1;
+    var vertices = [vec4(0.2, 0.0, 0.0, 1.0),
+                vec4(-0.2, 0.0, 0.0, 1.0),
+                vec4(0.0, 0.2, 0.0, 1.0),
+                vec4(0.0, -0.2, 0.0, 1.0),
+                vec4(0.0, 0.0, 0.2, 1.0),
+                vec4(0.0, 0.0, -0.2, 1.0)];
+    var vertices2 = [
+                        // Face 1
+                        vertices[0],
+                        vertices[3],
+                        vertices[4],
+                        // Face 2
+                        vertices[0],
+                        vertices[2],
+                        vertices[4],
+                        // Face 3
+                        vertices[1],
+                        vertices[2],
+                        vertices[4],
+                        // Face 4
+                        vertices[1],
+                        vertices[3],
+                        vertices[4],
+                        // Face 5
+                        vertices[0],
+                        vertices[3],
+                        vertices[5],
+                        // Face 6
+                        vertices[0],
+                        vertices[2],
+                        vertices[5],
+                        // Face 7
+                        vertices[1],
+                        vertices[2],
+                        vertices[5],
+                        // Face 8
+                        vertices[1],
+                        vertices[3],
+                        vertices[5]
+                 ];
+
+    /* Create an array for the coordinates in the texture image corresponding to each of the vertices */
+    var textureCoordinates = [  // Face 1
+                                1.0, 0.0,
+                                0.0, 0.0,
+                                0.5, 1.0,
+                                // Face 2
+                                0.0, 0.0,
+                                1.0, 0.0,
+                                0.5, 1.0,
+                                // Face 3
+                                1.0, 0.0,
+                                0.0, 0.0,
+                                0.5, 1.0,
+                                // Face 4
+                                0.0, 0.0,
+                                1.0, 0.0,
+                                0.5, 1.0,
+                                // Face 5
+                                0.0, 0.0,
+                                1.0, 0.0,
+                                0.5, 1.0,
+                                // Face 6
+                                1.0, 0.0,
+                                0.0, 0.0,
+                                0.5, 1.0,
+                                // Face 7
+                                0.0, 0.0,
+                                1.0, 0.0,
+                                0.5, 1.0,
+                                // Face 8
+                                1.0, 0.0,
+                                0.0, 0.0,
+                                0.5, 1.0
+    ]
+
+    console.log(vertices2);
+    console.log(vertices);
+
+    // Setup the colors of the vertices
+    var vertexColors = [vec4( 0.0, 0.0, 1.0, 1.0), // p0
+                        vec4( 0.0, 1.0, 0.0, 1.0), // p1
+                        vec4( 1.0, 0.0, 0.0, 1.0), // p2
+                        vec4( 1.0, 1.0, 0.0, 1.0), // p3
+                        vec4( 1.0, 0.0, 1.0, 1.0), // p4
+                        vec4( 0.0, 1.0, 1.0, 1.0)]; // p6
+
+    var indexList =    [0, 3, 4,
+                        0, 2, 4,
+                        1, 2, 4,
+                        1, 3, 4,
+                        0, 3, 5,
+                        0, 2, 5,
+                        1, 2, 5,
+                        1, 3, 5];
+
+    /* We need a new index list for the texture coordinates */
+    var indexList2 =    [ // Face 1
+                            0, 1, 2,
+                            // Face 2
+                            3, 4, 5,
+                            // Face 3
+                            6, 7, 8,
+                            // Face 4
+                            9, 10, 11,
+                            // Face 5
+                            12, 13, 14,
+                            // Face 6
+                            15, 16, 17,
+                            // Face 7
+                            18, 19, 20,
+                            // Face 8
+                            21, 22, 23];
+
+
+    /* I want to scale all of the vertices to try to make it visible */
+    vertices2 = flatten(vertices2);
+    console.log("scaling");
+    for(i = 0; i < vertices2.length; i++) {
+        if((i+1)%4)
+        vertices2[i] = vertices2[i] * 1;
+    }
+    console.log(vertices2);
+
+    var vertexBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(vertices2), gl.STATIC_DRAW);
+
+    var myPosition = gl.getAttribLocation( myShaderProgram, "vertexPosition" );
+    gl.vertexAttribPointer(myPosition, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(myPosition);
+
+    var iBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
+    gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(indexList2), gl.STATIC_DRAW);
+
+    /* Create attribute for texture coordinates */
+    var textureCoordinateBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordinateBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(textureCoordinates), gl.STATIC_DRAW);
+
+    var texCoordinate = gl.getAttribLocation(myShaderProgram, "textureCoordinate");
+    gl.vertexAttribPointer(texCoordinate, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(texCoordinate);
 }
 
 // FOLLOWING CODE SKELETON FOR getFaceNormals() NEEDS TO BE COMPLETED
@@ -484,18 +737,34 @@ function set_perspective() {
 }
 
 function drawObject() {
-    var P; /* Projection matrix */
-    // console.log("projection_select: ", projection_select);
-    if(projection_select) {
-        P = P_ortho;
+    if(use_texture > 0) {
+        gl.uniform1i(gl.getUniformLocation(myShaderProgram, "texMap0"), 0);
+        gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
+        gl.drawElements( gl.TRIANGLES, 24, gl.UNSIGNED_BYTE, 0 );
+        var P; /* Projection matrix */
+        // console.log("projection_select: ", projection_select);
+        if(projection_select) {
+            P = P_ortho;
+        } else {
+            // console.log("Here");
+            P = P_persp;
+        }
+        gl.uniformMatrix4fv(PUniform, false, P);
     } else {
-        // console.log("Here");
-        P = P_persp;
-    }
-    gl.uniformMatrix4fv(PUniform, false, P);
 
-    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
-    gl.drawElements( gl.TRIANGLES, 3 * numTriangles, gl.UNSIGNED_SHORT, 0 )
+        var P; /* Projection matrix */
+        // console.log("projection_select: ", projection_select);
+        if(projection_select) {
+            P = P_ortho;
+        } else {
+            // console.log("Here");
+            P = P_persp;
+        }
+        gl.uniformMatrix4fv(PUniform, false, P);
+
+        gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
+        gl.drawElements( gl.TRIANGLES, 3 * numTriangles, gl.UNSIGNED_SHORT, 0 )
+    }
 }
 
 function toggleSource1() {
