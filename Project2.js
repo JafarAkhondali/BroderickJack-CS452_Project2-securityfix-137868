@@ -52,6 +52,11 @@ var AlphaUniform; /* Uniform for sending the alpha value for shine */
 var P_ortho;
 var P_persp;
 
+/* Translation Variables */
+var T; // Translation matrix
+var Tuniform;
+var tx, ty, tz; /* The translation in the x, y, and z directions */
+
 /* 1: Orthographic 0: Perspective */
 var projection_select; /* Selects Orthographic vs. Perspecvice Projection */
 var source1;
@@ -114,8 +119,12 @@ function initGL() {
     TexFlagUniform = gl.getUniformLocation(myShaderProgram, "use_texture");
     Mxuniform = gl.getUniformLocation( myShaderProgram, "Mx" );
     Myuniform = gl.getUniformLocation( myShaderProgram, "My" );
+    Tuniform = gl.getUniformLocation( myShaderProgram, "T");
 
-    
+    /* Initial translation is 0 */
+    tx = 0;
+    ty = 0;
+    tz = 0;
 
     /* Decide if a texture is being used or not */
     use_texture = -1.0;
@@ -193,7 +202,7 @@ function initGL() {
           .0,
           .0,
           1.0];
-    
+
     My = [Math.cos(beta),
           .0,
           -Math.sin(beta),
@@ -210,13 +219,31 @@ function initGL() {
           .0,
           .0,
           1.0];
-    
+
+          T = [1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  tx,
+                  ty,
+                  tz,
+                  1.0];
+
 
         /* Send the model view matrix and the modelview inverse transpose matrix */
         gl.uniformMatrix4fv(MUniform, false, M);
         gl.uniformMatrix4fv(MVitUniform, false, modelviewInverseTranspose);
         gl.uniformMatrix4fv(Mxuniform, false, Mx );
         gl.uniformMatrix4fv(Myuniform, false, My );
+        gl.uniformMatrix4fv(Tuniform, false, T);
 
         // Set up the first light source and send the variables
         // to the shader program (NEEDS CODE, VARIABLES DEPEND ON LIGHT TYPE)
@@ -550,7 +577,7 @@ function process_object() {
 
     // render the object
     drawObject();
-    
+
 }
 
 function createOctahedron() {
@@ -802,7 +829,7 @@ function drawObject() {
             P = P_persp;
         }
         gl.uniformMatrix4fv(PUniform, false, P);
-        
+
         a = a + .05 * alterAlpha;
         Mx = [1.0,
               .0,
@@ -820,9 +847,9 @@ function drawObject() {
               .0,
               .0,
               1.0];
-        
+
         gl.uniformMatrix4fv( Mxuniform, false, Mx );
-        
+
     } else {
 
         var P; /* Projection matrix */
@@ -834,7 +861,7 @@ function drawObject() {
             P = P_persp;
         }
         gl.uniformMatrix4fv(PUniform, false, P);
-        
+
         a = a + .05 * alterAlpha;
         beta = beta + .05 * alterBeta;
         Mx = [1.0,
@@ -853,7 +880,7 @@ function drawObject() {
               .0,
               .0,
               1.0];
-        
+
         My = [Math.cos(beta),
               .0,
               -Math.sin(beta),
@@ -870,7 +897,7 @@ function drawObject() {
               .0,
               .0,
               1.0];
-        
+
         gl.uniformMatrix4fv( Mxuniform, false, Mx );
         gl.uniformMatrix4fv( Myuniform, false, My );
 
@@ -922,7 +949,7 @@ function moveObjectKeys(event)
     {
         alterBeta = 1.0;
     }
-    
+
 }
 
 
@@ -930,16 +957,15 @@ function stopObjectKeys(event)
 {
     var theKeyCode = event.keyCode;
 
-    
+
     if (theKeyCode == 88)
     {
         alterAlpha = .0;
     }
-    
+
     if (theKeyCode == 89)
     {
         alterBeta = .0;
     }
 
 }
-

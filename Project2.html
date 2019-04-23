@@ -36,6 +36,7 @@ uniform mat4 projection;
 
 uniform mat4 Mx;
 uniform mat4 My;
+uniform mat4 T; // Translation matrix
 // Set up uniforms for the ambient, diffuse, and specular coefficients
 // of the object, and the shininess
 
@@ -96,12 +97,12 @@ void main() {
         vec4 vi = vertexPosition;
         // Transform the vertex by the modelview matrix for future lighting calculations
         // vec4 vertexPositionTransformed = modelview * vertexPosition;
-        vi = projection * modelview * My * Mx * vi;
+        vi = projection * modelview * T * My * Mx * vi;
         vec4 p0_test = vec4(p0.x, p0.y, p0.z, 1.0);
         //p0_test = modelview * p0_test;
         //p0_test = vec4(p0_test.x/p0_test[3], p0_test.y/p0_test[3], p0_test.z/p0_test[3], 1.0);
         //p02 = modelview * p02;
-        vec4 vertexPositionTransformed =   modelview * My * Mx * vertexPosition; //Do you need Mx here???
+        vec4 vertexPositionTransformed =   modelview * T * My * Mx * vertexPosition; //Do you need Mx here???
 
         // Transform the normal by the inverse transpose of modelview matrix
         // for future lighting calculations
