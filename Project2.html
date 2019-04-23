@@ -34,6 +34,8 @@ uniform mat4 modelview;
 uniform mat4 modelviewInverseTranspose;
 uniform mat4 projection;
 
+uniform mat4 Mx;
+uniform mat4 My;
 // Set up uniforms for the ambient, diffuse, and specular coefficients
 // of the object, and the shininess
 
@@ -82,7 +84,7 @@ void main() {
 
         // vec4 vf = T * Mx * My * Mw * S * vi;
         // vec4 vf = projection * modelview * vi;
-        vec4 vf = vi;
+        vec4 vf = Mx * vi;
 
         fTextureCoordinate = textureCoordinate;
 
@@ -94,8 +96,12 @@ void main() {
         vec4 vi = vertexPosition;
         // Transform the vertex by the modelview matrix for future lighting calculations
         // vec4 vertexPositionTransformed = modelview * vertexPosition;
-        vi = projection * modelview * vi;
-        vec4 vertexPositionTransformed = modelview * vertexPosition;
+        vi = projection * modelview * My * Mx * vi;
+        vec4 p0_test = vec4(p0.x, p0.y, p0.z, 1.0);
+        //p0_test = modelview * p0_test;
+        //p0_test = vec4(p0_test.x/p0_test[3], p0_test.y/p0_test[3], p0_test.z/p0_test[3], 1.0);
+        //p02 = modelview * p02;
+        vec4 vertexPositionTransformed =   modelview * My * Mx * vertexPosition; //Do you need Mx here???
 
         // Transform the normal by the inverse transpose of modelview matrix
         // for future lighting calculations
@@ -105,6 +111,7 @@ void main() {
         // denominator using the form ad^2 + bd + c
 
         /* Compute the point light source and spotlight source distance */
+        //distance = length(vertexPositionTransformed.xyz - p0_test.xyz);
         distance = length(vertexPositionTransformed.xyz - p0);
         float distance2 = length(vertexPositionTransformed.xyz - p02);
 
@@ -114,6 +121,7 @@ void main() {
         float c = 1.0;
 
         /* Diffuse reflection */
+       // i = normalize(p0_test.xyz - vertexPositionTransformed.xyz);
         i = normalize(p0 - vertexPositionTransformed.xyz);
         i2 = normalize(p02 - vertexPositionTransformed.xyz);
 
@@ -132,7 +140,7 @@ void main() {
         Is_pp02 = (Is2 / (a * distance2 * distance2 + b * distance2 + c)) * costheta2;
 
         vec4 nv4 = vec4 ( vertexNormal[0], vertexNormal[1], vertexNormal[2], 1.0);
-        vec4 nvtransformed4 = modelviewInverseTranspose * nv4; //add modelViewInverseTranspose as uniform
+        vec4 nvtransformed4 = modelviewInverseTranspose * My * Mx * nv4; //add modelViewInverseTranspose as uniform
         vec3 nv = nvtransformed4.xyz; //gives you just the first 3 of this vec4
 
         v = normalize(vec3(0.0, 0.0, 0.0) - vertexPositionTransformed.xyz);
@@ -314,7 +322,7 @@ void main() {
 <!-- <script type="text/javascript" src="Geometry.js"></script> -->
 </head>
 
-<body onload = "initGL()">
+<body onload = "initGL()" onkeydown="moveObjectKeys(event)" onkeyup="stopObjectKeys(event)">
     <canvas id="gl-canvas" height="512" width="512">
     </canvas>
     <div class=row>

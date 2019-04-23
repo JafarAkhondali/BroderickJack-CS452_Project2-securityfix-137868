@@ -66,6 +66,18 @@ var vertexNormals = [];
 var texCoordinates = [];
 var use_texture;
 
+//Creation transformation matrices
+var Mx;
+var My;
+var Mxuniform;
+var Myuniform;
+var a = .0;
+var beta = .0;
+
+var alterAlpha = .0;
+var alterBeta = .0;
+
+
 function initGL() {
     var canvas = document.getElementById( "gl-canvas" );
 
@@ -100,7 +112,10 @@ function initGL() {
     AlphaUniform = gl.getUniformLocation(myShaderProgram, "alpha");
     ToggleSpecularUniform = gl.getUniformLocation(myShaderProgram, "toggleSpecular");
     TexFlagUniform = gl.getUniformLocation(myShaderProgram, "use_texture");
+    Mxuniform = gl.getUniformLocation( myShaderProgram, "Mx" );
+    Myuniform = gl.getUniformLocation( myShaderProgram, "My" );
 
+    
 
     /* Decide if a texture is being used or not */
     use_texture = -1.0;
@@ -162,10 +177,46 @@ function initGL() {
                                                             0.0,
                                                             1.0];
 
+    Mx = [1.0,
+          .0,
+          .0,
+          .0,
+          .0,
+          Math.cos(a),
+          -Math.sin(a),
+          .0,
+          .0,
+          Math.sin(a),
+          Math.cos(a),
+          .0,
+          .0,
+          .0,
+          .0,
+          1.0];
+    
+    My = [Math.cos(beta),
+          .0,
+          -Math.sin(beta),
+          .0,
+          .0,
+          1.0,
+          .0,
+          .0,
+          Math.sin(beta),
+          .0,
+          Math.cos(beta),
+          .0,
+          .0,
+          .0,
+          .0,
+          1.0];
+    
 
         /* Send the model view matrix and the modelview inverse transpose matrix */
         gl.uniformMatrix4fv(MUniform, false, M);
         gl.uniformMatrix4fv(MVitUniform, false, modelviewInverseTranspose);
+        gl.uniformMatrix4fv(Mxuniform, false, Mx );
+        gl.uniformMatrix4fv(Myuniform, false, My );
 
         // Set up the first light source and send the variables
         // to the shader program (NEEDS CODE, VARIABLES DEPEND ON LIGHT TYPE)
@@ -499,6 +550,7 @@ function process_object() {
 
     // render the object
     drawObject();
+    
 }
 
 function createOctahedron() {
@@ -750,6 +802,27 @@ function drawObject() {
             P = P_persp;
         }
         gl.uniformMatrix4fv(PUniform, false, P);
+        
+        a = a + .05 * alterAlpha;
+        Mx = [1.0,
+              .0,
+              .0,
+              .0,
+              .0,
+              Math.cos(a),
+              -Math.sin(a),
+              .0,
+              .0,
+              Math.sin(a),
+              Math.cos(a),
+              .0,
+              .0,
+              .0,
+              .0,
+              1.0];
+        
+        gl.uniformMatrix4fv( Mxuniform, false, Mx );
+        
     } else {
 
         var P; /* Projection matrix */
@@ -761,10 +834,50 @@ function drawObject() {
             P = P_persp;
         }
         gl.uniformMatrix4fv(PUniform, false, P);
+        
+        a = a + .05 * alterAlpha;
+        beta = beta + .05 * alterBeta;
+        Mx = [1.0,
+              .0,
+              .0,
+              .0,
+              .0,
+              Math.cos(a),
+              -Math.sin(a),
+              .0,
+              .0,
+              Math.sin(a),
+              Math.cos(a),
+              .0,
+              .0,
+              .0,
+              .0,
+              1.0];
+        
+        My = [Math.cos(beta),
+              .0,
+              -Math.sin(beta),
+              .0,
+              .0,
+              1.0,
+              .0,
+              .0,
+              Math.sin(beta),
+              .0,
+              Math.cos(beta),
+              .0,
+              .0,
+              .0,
+              .0,
+              1.0];
+        
+        gl.uniformMatrix4fv( Mxuniform, false, Mx );
+        gl.uniformMatrix4fv( Myuniform, false, My );
 
         gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
         gl.drawElements( gl.TRIANGLES, 3 * numTriangles, gl.UNSIGNED_SHORT, 0 )
     }
+    requestAnimFrame( drawObject );
 }
 
 function toggleSource1() {
@@ -774,7 +887,7 @@ function toggleSource1() {
         source1 = 1;
     }
     gl.uniform1f(Source1Uniform, source1);
-    drawObject();
+    //drawObject();
 }
 
 function toggleSource2() {
@@ -784,7 +897,7 @@ function toggleSource2() {
         source2 = 1;
     }
     gl.uniform1f(Source2Uniform, source2);
-    drawObject();
+    //drawObject();
 }
 
 function toggleSpec() {
@@ -794,5 +907,39 @@ function toggleSpec() {
         toggleSpecular = 1;
     }
     gl.uniform1f(ToggleSpecularUniform, toggleSpecular);
-    drawObject();
+    //drawObject();
 }
+
+function moveObjectKeys(event)
+{
+    var theKeyCode = event.keyCode;
+
+    if (theKeyCode == 88)
+    {
+        alterAlpha = 1.0;
+    }
+    if (theKeyCode == 89)
+    {
+        alterBeta = 1.0;
+    }
+    
+}
+
+
+function stopObjectKeys(event)
+{
+    var theKeyCode = event.keyCode;
+
+    
+    if (theKeyCode == 88)
+    {
+        alterAlpha = .0;
+    }
+    
+    if (theKeyCode == 89)
+    {
+        alterBeta = .0;
+    }
+
+}
+
