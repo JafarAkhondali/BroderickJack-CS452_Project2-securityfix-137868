@@ -56,6 +56,12 @@ var P_persp;
 var T; // Translation matrix
 var Tuniform;
 var tx, ty, tz; /* The translation in the x, y, and z directions */
+var trans_x;
+var trans_y;
+var trans_x;
+var D_X = 0.5;
+var D_Y = 0.5;
+var D_Z = 0.5;
 
 /* 1: Orthographic 0: Perspective */
 var projection_select; /* Selects Orthographic vs. Perspecvice Projection */
@@ -125,6 +131,9 @@ function initGL() {
     tx = 0;
     ty = 0;
     tz = 0;
+    trans_x = 0;
+    trans_y = 0;
+    trans_z = 0;
 
     /* Decide if a texture is being used or not */
     use_texture = -1.0;
@@ -700,7 +709,7 @@ function createOctahedron() {
 
     /* I want to scale all of the vertices to try to make it visible */
     vertices2 = flatten(vertices2);
-    console.log("scaling");
+    // console.log("scaling");
     for(i = 0; i < vertices2.length; i++) {
         if((i+1)%4)
         vertices2[i] = vertices2[i] * 1;
@@ -864,6 +873,10 @@ function drawObject() {
 
         a = a + .05 * alterAlpha;
         beta = beta + .05 * alterBeta;
+        tx = tx + D_X * trans_x;
+        ty = ty + D_Y * trans_y;
+        tz = tz + D_Z * trans_z;
+
         Mx = [1.0,
               .0,
               .0,
@@ -897,9 +910,28 @@ function drawObject() {
               .0,
               .0,
               1.0];
+          T = [1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  tx,
+                  ty,
+                  tz,
+                  1.0];
 
         gl.uniformMatrix4fv( Mxuniform, false, Mx );
         gl.uniformMatrix4fv( Myuniform, false, My );
+        gl.uniformMatrix4fv(Tuniform, false, T);
+
+        // console.log("T: ", T);
 
         gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
         gl.drawElements( gl.TRIANGLES, 3 * numTriangles, gl.UNSIGNED_SHORT, 0 )
@@ -949,7 +981,26 @@ function moveObjectKeys(event)
     {
         alterBeta = 1.0;
     }
-
+    // ArrowLeft: Shift along x-axis
+    // ArrowUp: Shift along y-axis
+    // ArrowRight: Shipt along z-axis
+    // console.log(e);
+    if(event.key == 'w') {
+        spin_alpha = 1;
+        //console.log("w presed");
+    } if(event.key == 'a') {
+        spin_beta = 1;
+    } if(event.key == 'd') {
+        spin_gamma = 1;
+    } if(event.key == "ArrowRight") {
+        trans_x = 1;
+    } if(event.key == "ArrowUp") {
+        trans_y = 1;
+    }if(event.key == "ArrowLeft") {
+        trans_x = -1;
+    }if(event.key == "ArrowDown") {
+        trans_y = -1;
+    }
 }
 
 
@@ -967,5 +1018,9 @@ function stopObjectKeys(event)
     {
         alterBeta = .0;
     }
-
+    if(event.key == "ArrowRight") {
+        trans_x = 0;
+    } if(event.key == "ArrowUp") {
+        trans_y = 0;
+    }
 }
