@@ -88,6 +88,10 @@ var beta = .0;
 var alterAlpha = .0;
 var alterBeta = .0;
 
+/* Global variable for the current object we are creating */
+var cur_object;
+var all_objects = [];
+
 
 function initGL() {
     var canvas = document.getElementById( "gl-canvas" );
@@ -229,22 +233,22 @@ function initGL() {
           .0,
           1.0];
 
-          T = [1.0,
-                  0.0,
-                  0.0,
-                  0.0,
-                  0.0,
-                  1.0,
-                  0.0,
-                  0.0,
-                  0.0,
-                  0.0,
-                  1.0,
-                  0.0,
-                  tx,
-                  ty,
-                  tz,
-                  1.0];
+      T = [1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              tx,
+              ty,
+              tz,
+              1.0];
 
 
         /* Send the model view matrix and the modelview inverse transpose matrix */
@@ -381,16 +385,22 @@ function initGL() {
     var object_names = ['coke_bottle.OBJ', 'Irex_obj.obj', 'TV.obj', 'apple.obj'];
     // var object_names = ['Irex_obj.obj'];
 
+    /* Create an object for each of these */
+    cur_object = new Object();
+    cur_object.name = object_names;
+    cur_object.tx = 0;
+    cur_object.ty = 0;
+    cur_object.tz = 0;
+
     var i = 3;
     // for(i = 0; i < object_names.length; i++) {
     //     load_object(object_names[i]);
     // }
     vertexScaling = vertex_scalings[i];
     load_object(object_names[i]);
+    console.log("Object: Created: ", cur_object);
+    all_objects.push(cur_object);
     // createOctahedron();
-
-
-
     // drawObject();
 };
 
@@ -409,7 +419,7 @@ function load_object(object_name) {
     	function ( object ) {
             /* Need to call draw all of the children
             /* We get the vertices of all of the points */
-            console.log(object);
+            // console.log(object);
             /* Create a geometry object from a buffer geometry */
             // geometry = new THREE.Geometry().fromBufferGeometry( object.children[0].geometry );
 
@@ -482,27 +492,11 @@ function process_object() {
             vertexNormals.push(v_n[i].z);
         }
 
-        /* We now need to send the values via buffers */
-        var indexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+        /* Save the values for the current object */
+        cur_object.indices = indices;
+        cur_object.vertexNormals = vertexNormals;
+        cur_object.vertices = vertices;
 
-        /* Create a buffer for the vertex normals */
-        var vertexNormal = gl.getAttribLocation(myShaderProgram, "vertexNormal");
-        var normalsBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, normalsBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(vertexNormals), gl.STATIC_DRAW);
-        gl.vertexAttribPointer(vertexNormal, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(vertexNormal);
-
-        /* Create, bind, and send data to the buffer for the vertices */
-        var vertexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW);
-
-        var vertexPosition = gl.getAttribLocation(myShaderProgram, "vertexPosition");
-        gl.vertexAttribPointer(vertexPosition, 4, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(vertexPosition);
     } else {
         /* We are going to use the texture */
         var indexCounter = 0;
@@ -586,7 +580,6 @@ function process_object() {
 
     // render the object
     drawObject();
-
 }
 
 function createOctahedron() {
@@ -871,70 +864,111 @@ function drawObject() {
         }
         gl.uniformMatrix4fv(PUniform, false, P);
 
-        a = a + .05 * alterAlpha;
-        beta = beta + .05 * alterBeta;
-        tx = tx + D_X * trans_x;
-        ty = ty + D_Y * trans_y;
-        tz = tz + D_Z * trans_z;
 
-        Mx = [1.0,
-              .0,
-              .0,
-              .0,
-              .0,
-              Math.cos(a),
-              -Math.sin(a),
-              .0,
-              .0,
-              Math.sin(a),
-              Math.cos(a),
-              .0,
-              .0,
-              .0,
-              .0,
-              1.0];
-
-        My = [Math.cos(beta),
-              .0,
-              -Math.sin(beta),
-              .0,
-              .0,
-              1.0,
-              .0,
-              .0,
-              Math.sin(beta),
-              .0,
-              Math.cos(beta),
-              .0,
-              .0,
-              .0,
-              .0,
-              1.0];
-          T = [1.0,
-                  0.0,
-                  0.0,
-                  0.0,
-                  0.0,
-                  1.0,
-                  0.0,
-                  0.0,
-                  0.0,
-                  0.0,
-                  1.0,
-                  0.0,
-                  tx,
-                  ty,
-                  tz,
-                  1.0];
-
-        gl.uniformMatrix4fv( Mxuniform, false, Mx );
-        gl.uniformMatrix4fv( Myuniform, false, My );
-        gl.uniformMatrix4fv(Tuniform, false, T);
 
         // console.log("T: ", T);
 
+        /* Clear the screen */
         gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
-        gl.drawElements( gl.TRIANGLES, 3 * numTriangles, gl.UNSIGNED_SHORT, 0 )
+        /* Send all of the data for each of the objects */
+        for(i = 0; i < all_objects.length; i++) {
+            var c_obj = all_objects[i];
+            var indices = c_obj.indices;
+            var vertexNormals = c_obj.vertexNormals;
+            var vertices = c_obj.vertices;
+            tx = c_obj.tx;
+            ty = c_obj.ty;
+            tz = c_obj.tz;
+
+            a = a + .05 * alterAlpha;
+            beta = beta + .05 * alterBeta;
+            tx = tx + D_X * trans_x;
+            ty = ty + D_Y * trans_y;
+            tz = tz + D_Z * trans_z;
+
+            c_obj.tx = tx;
+            c_obj.ty = ty;
+            c_obj.tz = tz;
+
+            Mx = [1.0,
+                  .0,
+                  .0,
+                  .0,
+                  .0,
+                  Math.cos(a),
+                  -Math.sin(a),
+                  .0,
+                  .0,
+                  Math.sin(a),
+                  Math.cos(a),
+                  .0,
+                  .0,
+                  .0,
+                  .0,
+                  1.0];
+
+            My = [Math.cos(beta),
+                  .0,
+                  -Math.sin(beta),
+                  .0,
+                  .0,
+                  1.0,
+                  .0,
+                  .0,
+                  Math.sin(beta),
+                  .0,
+                  Math.cos(beta),
+                  .0,
+                  .0,
+                  .0,
+                  .0,
+                  1.0];
+              T = [1.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      1.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      1.0,
+                      0.0,
+                      tx,
+                      ty,
+                      tz,
+                      1.0];
+
+            gl.uniformMatrix4fv( Mxuniform, false, Mx );
+            gl.uniformMatrix4fv( Myuniform, false, My );
+            gl.uniformMatrix4fv(Tuniform, false, T);
+
+            /* We now need to send the values via buffers */
+            var indexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+
+            /* Create a buffer for the vertex normals */
+            var vertexNormal = gl.getAttribLocation(myShaderProgram, "vertexNormal");
+            var normalsBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, normalsBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, flatten(vertexNormals), gl.STATIC_DRAW);
+            gl.vertexAttribPointer(vertexNormal, 3, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(vertexNormal);
+
+            /* Create, bind, and send data to the buffer for the vertices */
+            var vertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW);
+
+            var vertexPosition = gl.getAttribLocation(myShaderProgram, "vertexPosition");
+            gl.vertexAttribPointer(vertexPosition, 4, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(vertexPosition);
+            gl.drawElements( gl.TRIANGLES, 3 * numTriangles, gl.UNSIGNED_SHORT, 0 )
+
+        }
+
     }
     requestAnimFrame( drawObject );
 }
@@ -973,19 +1007,11 @@ function moveObjectKeys(event)
 {
     var theKeyCode = event.keyCode;
 
-    if (theKeyCode == 88)
-    {
+    if (theKeyCode == 88) {
         alterAlpha = 1.0;
-    }
-    if (theKeyCode == 89)
-    {
+    } if (theKeyCode == 89) {
         alterBeta = 1.0;
-    }
-    // ArrowLeft: Shift along x-axis
-    // ArrowUp: Shift along y-axis
-    // ArrowRight: Shipt along z-axis
-    // console.log(e);
-    if(event.key == 'w') {
+    } if(event.key == 'w') {
         spin_alpha = 1;
         //console.log("w presed");
     } if(event.key == 'a') {
@@ -1008,19 +1034,17 @@ function stopObjectKeys(event)
 {
     var theKeyCode = event.keyCode;
 
-
-    if (theKeyCode == 88)
-    {
+    if (theKeyCode == 88){
         alterAlpha = .0;
-    }
-
-    if (theKeyCode == 89)
-    {
+    } if (theKeyCode == 89) {
         alterBeta = .0;
-    }
-    if(event.key == "ArrowRight") {
+    } if(event.key == "ArrowRight") {
         trans_x = 0;
     } if(event.key == "ArrowUp") {
+        trans_y = 0;
+    }if(event.key == "ArrowLeft") {
+        trans_x = 0;
+    }if(event.key == "ArrowDown") {
         trans_y = 0;
     }
 }
