@@ -9,6 +9,12 @@ coke bottle: https://www.turbosquid.com/FullPreview/Index.cfm/ID/540827
 
 */
 
+var objects_to_load = 2;
+var objects_loaded = 0;
+var vertex_scalings = [];
+var positions = [];
+var object_names = [];
+
 var gl;
 var numVertices;
 var numTriangles;
@@ -381,34 +387,52 @@ function initGL() {
     }
 
     /* We need to load the object */
-    var vertex_scalings = [1.0, 1.0, 10.0, 1.0];
-    var object_names = ['coke_bottle.OBJ', 'Irex_obj.obj', 'TV.obj', 'apple.obj'];
+    vertex_scalings = [1.0, 1.0, 10.0, 1.0];
+    // var object_names = ['coke_bottle.OBJ', 'Irex_obj.obj', 'TV.obj', 'apple.obj'];
+    object_names = ['coke_bottle.OBJ', 'apple.obj'];
+    positions = [[0, 0, 0], [-100, -100, 0]];
     // var object_names = ['Irex_obj.obj'];
 
+    // var i = 3;
     /* Create an object for each of these */
-    cur_object = new Object();
-    cur_object.name = object_names;
-    cur_object.tx = 0;
-    cur_object.ty = 0;
-    cur_object.tz = 0;
-
-    var i = 3;
-    // for(i = 0; i < object_names.length; i++) {
-    //     load_object(object_names[i]);
-    // }
-    vertexScaling = vertex_scalings[i];
-    load_object(object_names[i]);
-    console.log("Object: Created: ", cur_object);
-    all_objects.push(cur_object);
+    // cur_object = new Object();
+    // cur_object.name = object_names[];
+    // cur_object.tx = 100;
+    // cur_object.ty = 100;
+    // cur_object.tz = 0;
+    // vertexScaling = vertex_scalings[i];
+    // load_object(object_names[i]);
+    //
+    // i = 0;
+    // cur_object = new Object();
+    // cur_object.name = object_names[i];
+    // cur_object.tx = 50;
+    // cur_object.ty = 0;
+    // cur_object.tz = 0;
+    // vertexScaling = vertex_scalings[i];
+    load_object();
+    // console.log("Object: Created: ", cur_object);
+    // all_objects.push(cur_object);
     // createOctahedron();
     // drawObject();
 };
 
 
-function load_object(object_name) {
+function load_object() {
     // instantiate a loader
+
     var children;
     var loader = new THREE.OBJLoader();
+
+    var object_name = object_names[objects_loaded];
+
+    cur_object = new Object();
+    cur_object.name = object_name;
+    cur_object.tx = positions[objects_loaded][0];
+    cur_object.ty = positions[objects_loaded][1];
+    cur_object.tz = positions[objects_loaded][2];
+    vertexScaling = vertex_scalings[objects_loaded];
+    // load_object(object_names[i]);
 
     // load a resource
     loader.load(
@@ -419,14 +443,14 @@ function load_object(object_name) {
     	function ( object ) {
             /* Need to call draw all of the children
             /* We get the vertices of all of the points */
-            // console.log(object);
+            console.log(object);
             /* Create a geometry object from a buffer geometry */
             // geometry = new THREE.Geometry().fromBufferGeometry( object.children[0].geometry );
 
             children = object.children;
 
-            var i =0;
-            for(i = 0; i < children.length; i++) {
+            var i = 0;
+            // for(i = 0; i < children.length; i++) {
                     geometry = new THREE.Geometry().fromBufferGeometry(children[i].geometry);
 
                     console.log(geometry);
@@ -435,7 +459,7 @@ function load_object(object_name) {
 
                     /* Next, call a function to process the loaded geometry object */
                     process_object();
-            }
+            // }
     	},
     	// called when loading is in progresses
     	function ( xhr ) {
@@ -444,9 +468,7 @@ function load_object(object_name) {
     	},
     	// called when loading has errors
     	function ( error ) {
-
     		console.log( 'An error happened' );
-
     	}
     );
 
@@ -456,6 +478,9 @@ function process_object() {
     /* We need to add 1.0 to all of the vertices because it is going to be looking for a vec4 in the vertex shader for position */
     var i = 0;
     var j = 0;
+    var indices = [];
+    var vertexNormals = [];
+    var vertices = [];
 
     var faces = geometry.faces;
 
@@ -496,6 +521,18 @@ function process_object() {
         cur_object.indices = indices;
         cur_object.vertexNormals = vertexNormals;
         cur_object.vertices = vertices;
+
+        console.log("Object: Created: ", cur_object);
+        all_objects.push(cur_object);
+        objects_loaded++;
+
+        if(objects_loaded >= objects_to_load) {
+            /* We are done creating the objects so then we can draw them */
+            console.log("All objects", all_objects);
+            drawObject();
+        } else {
+            load_object();
+        }
 
     } else {
         /* We are going to use the texture */
@@ -579,7 +616,11 @@ function process_object() {
     /* Try rendering the object with the texture coordinate if the flag is set */
 
     // render the object
-    drawObject();
+    if(objects_loaded >= objects_to_load) {
+        console.log(all_objects);
+        drawObject();
+    }
+    // drawObject();
 }
 
 function createOctahedron() {
