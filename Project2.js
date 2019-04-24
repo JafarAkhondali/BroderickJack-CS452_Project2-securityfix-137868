@@ -72,6 +72,14 @@ var D_X = 0.5;
 var D_Y = 0.5;
 var D_Z = 0.5;
 
+/* Scaling */
+var scale_x = 0.0;
+var scale_y = 0.0;
+var scale_z = 0.0;
+var D_SX = 0.01;
+var D_SY = 0.01;
+var D_SZ = 0.01;
+
 /* 1: Orthographic 0: Perspective */
 var projection_select; /* Selects Orthographic vs. Perspecvice Projection */
 var source1;
@@ -139,6 +147,7 @@ function initGL() {
     Mxuniform = gl.getUniformLocation( myShaderProgram, "Mx" );
     Myuniform = gl.getUniformLocation( myShaderProgram, "My" );
     Tuniform = gl.getUniformLocation( myShaderProgram, "T");
+    Suniform = gl.getUniformLocation( myShaderProgram, "S");
 
     /* Initial translation is 0 */
     tx = 0;
@@ -358,6 +367,9 @@ function load_object() {
 
     cur_object = new Object();
     cur_object.name = object_name;
+    cur_object.sx = 1.0;
+    cur_object.sy = 1.0;
+    cur_object.sz = 1.0;
     cur_object.tx = positions[objects_loaded][0];
     cur_object.ty = positions[objects_loaded][1];
     cur_object.tz = positions[objects_loaded][2];
@@ -366,6 +378,7 @@ function load_object() {
     cur_object.ka = kas[objects_loaded];
     cur_object.kd = kds[objects_loaded];
     cur_object.ks = kss[objects_loaded];
+    console.log("here: ", cur_object);
     vertexScaling = vertex_scalings[objects_loaded];
     // load_object(object_names[i]);
 
@@ -546,6 +559,7 @@ function process_object() {
     // render the object
     if(objects_loaded >= objects_to_load) {
         console.log(all_objects);
+        console.log("All objects: ", all_objects);
         drawObject();
     }
     // drawObject();
@@ -850,6 +864,9 @@ function drawObject() {
             var ka = c_obj.ka;
             var kd = c_obj.kd;
             var ks = c_obj.ks;
+            var sx = c_obj.sx;
+            var sy = c_obj.sy;
+            var sz = c_obj.sz;
             tx = c_obj.tx;
             ty = c_obj.ty;
             tz = c_obj.tz;
@@ -862,6 +879,9 @@ function drawObject() {
                 tx = tx + D_X * trans_x;
                 ty = ty + D_Y * trans_y;
                 tz = tz + D_Z * trans_z;
+                sx = sx + D_SX * scale_x;
+                sy = sy + D_SY * scale_y;
+                sz = sz + D_SZ * scale_z;
             }
 
             c_obj.tx = tx;
@@ -869,6 +889,9 @@ function drawObject() {
             c_obj.tz = tz;
             c_obj.a = a;
             c_obj.beta = beta;
+            c_obj.sx = sx;
+            c_obj.sy = sy;
+            c_obj.sz = sz;
 
             Mx = [1.0,
                   .0,
@@ -919,6 +942,24 @@ function drawObject() {
                       ty,
                       tz,
                       1.0];
+           S = [sx,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      sy,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      sz,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      1.0];
+
+                      // console.log("S: ", S);
 
 
              /* Send the variables to the unifomrs */
@@ -928,6 +969,7 @@ function drawObject() {
             gl.uniformMatrix4fv( Mxuniform, false, Mx );
             gl.uniformMatrix4fv( Myuniform, false, My );
             gl.uniformMatrix4fv(Tuniform, false, T);
+            gl.uniformMatrix4fv(Suniform, false, S);
 
             /* We now need to send the values via buffers */
             var indexBuffer = gl.createBuffer();
@@ -1007,10 +1049,18 @@ function moveObjectKeys(event)
         trans_x = 1;
     } if(event.key == "ArrowUp") {
         trans_y = 1;
-    }if(event.key == "ArrowLeft") {
+    } if(event.key == "ArrowLeft") {
         trans_x = -1;
-    }if(event.key == "ArrowDown") {
+    } if(event.key == "ArrowDown") {
         trans_y = -1;
+    } if(event.key == 'j') {
+            scale_x = 1;
+    } if(event.key == 'k') {
+            scale_x = -1;
+    } if(event.key == 'i') {
+            scale_y = 1;
+    } if(event.key == 'o') {
+            scale_y = -1;
     }
 }
 
@@ -1031,5 +1081,13 @@ function stopObjectKeys(event)
         trans_x = 0;
     }if(event.key == "ArrowDown") {
         trans_y = 0;
+    } if(event.key == 'j') {
+            scale_x = 0;
+    } if(event.key == 'i') {
+            scale_y = 0;
+    } if(event.key == 'o') {
+            scale_y = 0;
+    } if(event.key == 'k') {
+            scale_x = 0;
     }
 }
