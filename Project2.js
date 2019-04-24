@@ -14,6 +14,9 @@ var objects_loaded = 0;
 var vertex_scalings = [];
 var positions = [];
 var object_names = [];
+var kds = [];
+var kas = [];
+var kss = [];
 
 var gl;
 var numVertices;
@@ -220,12 +223,12 @@ function initGL() {
         gl.uniform3f(PosUniform2, p02[0], p02[1], p02[2]);
 
         /* Incident Components for the first light source */
-        var Ia = vec3(0.8, 0.3, 0.1);
+        var Ia = vec3(0.7, 0.6, 0.6);
         var Id = vec3(0.7, 0.3, 0.7);
         var Is = vec3(0.4, 0.4, 0.4);
 
         /* Incident components for the spotlight */
-        var Ia2 = vec3(0.3, 0.8, 0.8);
+        var Ia2 = vec3(0.5, 0.8, 0.8);
         var Id2 = vec3(0.3, 0.7, 0.7);
         var Is2 = vec3(0.4, 0.4, 0.4);
 
@@ -338,6 +341,9 @@ function initGL() {
     object_names = ['coke_bottle.OBJ', 'apple.obj'];
     positions = [[0, 0, 0], [-100, -100, 0]];
     spins = [[0,0], [0,0]];
+    kas = [[0.545, 0.27, 0.09], [0.6, 0.1, 0.1]];
+    kds = [[0.545, 0.27, 0.09], [0.6, 0.1, 0.1]];
+    kss = [[0.545, 0.27, 0.09], [0.6, 0.1, 0.1]];
     load_object();
 };
 
@@ -357,6 +363,9 @@ function load_object() {
     cur_object.tz = positions[objects_loaded][2];
     cur_object.a = spins[objects_loaded][0];
     cur_object.beta = spins[objects_loaded][0];
+    cur_object.ka = kas[objects_loaded];
+    cur_object.kd = kds[objects_loaded];
+    cur_object.ks = kss[objects_loaded];
     vertexScaling = vertex_scalings[objects_loaded];
     // load_object(object_names[i]);
 
@@ -838,6 +847,9 @@ function drawObject() {
             var vertices = c_obj.vertices;
             var a = 0;
             var beta = 0;
+            var ka = c_obj.ka;
+            var kd = c_obj.kd;
+            var ks = c_obj.ks;
             tx = c_obj.tx;
             ty = c_obj.ty;
             tz = c_obj.tz;
@@ -908,6 +920,11 @@ function drawObject() {
                       tz,
                       1.0];
 
+
+             /* Send the variables to the unifomrs */
+            gl.uniform3f(KaUniform, ka[0], ka[1], ka[2]);
+            gl.uniform3f(KdUniform, kd[0], kd[1], kd[2]);
+            gl.uniform3f(KsUniform, ks[0], ks[1], ks[2]);
             gl.uniformMatrix4fv( Mxuniform, false, Mx );
             gl.uniformMatrix4fv( Myuniform, false, My );
             gl.uniformMatrix4fv(Tuniform, false, T);
