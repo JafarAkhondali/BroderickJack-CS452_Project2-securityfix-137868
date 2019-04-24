@@ -8,7 +8,7 @@ irex: https://www.turbosquid.com/3d-models/3d-indominus-rex-rig-irex-1182227
 coke bottle: https://www.turbosquid.com/FullPreview/Index.cfm/ID/540827
 
 */
-
+var MOVE_INDEX = 0; /* The index of which object is going to be allowed to move */
 var objects_to_load = 2;
 var objects_loaded = 0;
 var vertex_scalings = [];
@@ -88,7 +88,7 @@ var Mx;
 var My;
 var Mxuniform;
 var Myuniform;
-var a = .0;
+// var a = .0;
 var beta = .0;
 
 var alterAlpha = .0;
@@ -205,64 +205,10 @@ function initGL() {
                                                             0.0,
                                                             1.0];
 
-    Mx = [1.0,
-          .0,
-          .0,
-          .0,
-          .0,
-          Math.cos(a),
-          -Math.sin(a),
-          .0,
-          .0,
-          Math.sin(a),
-          Math.cos(a),
-          .0,
-          .0,
-          .0,
-          .0,
-          1.0];
-
-    My = [Math.cos(beta),
-          .0,
-          -Math.sin(beta),
-          .0,
-          .0,
-          1.0,
-          .0,
-          .0,
-          Math.sin(beta),
-          .0,
-          Math.cos(beta),
-          .0,
-          .0,
-          .0,
-          .0,
-          1.0];
-
-      T = [1.0,
-              0.0,
-              0.0,
-              0.0,
-              0.0,
-              1.0,
-              0.0,
-              0.0,
-              0.0,
-              0.0,
-              1.0,
-              0.0,
-              tx,
-              ty,
-              tz,
-              1.0];
-
 
         /* Send the model view matrix and the modelview inverse transpose matrix */
         gl.uniformMatrix4fv(MUniform, false, M);
         gl.uniformMatrix4fv(MVitUniform, false, modelviewInverseTranspose);
-        gl.uniformMatrix4fv(Mxuniform, false, Mx );
-        gl.uniformMatrix4fv(Myuniform, false, My );
-        gl.uniformMatrix4fv(Tuniform, false, T);
 
         // Set up the first light source and send the variables
         // to the shader program (NEEDS CODE, VARIABLES DEPEND ON LIGHT TYPE)
@@ -391,30 +337,8 @@ function initGL() {
     // var object_names = ['coke_bottle.OBJ', 'Irex_obj.obj', 'TV.obj', 'apple.obj'];
     object_names = ['coke_bottle.OBJ', 'apple.obj'];
     positions = [[0, 0, 0], [-100, -100, 0]];
-    // var object_names = ['Irex_obj.obj'];
-
-    // var i = 3;
-    /* Create an object for each of these */
-    // cur_object = new Object();
-    // cur_object.name = object_names[];
-    // cur_object.tx = 100;
-    // cur_object.ty = 100;
-    // cur_object.tz = 0;
-    // vertexScaling = vertex_scalings[i];
-    // load_object(object_names[i]);
-    //
-    // i = 0;
-    // cur_object = new Object();
-    // cur_object.name = object_names[i];
-    // cur_object.tx = 50;
-    // cur_object.ty = 0;
-    // cur_object.tz = 0;
-    // vertexScaling = vertex_scalings[i];
+    spins = [[0,0], [0,0]];
     load_object();
-    // console.log("Object: Created: ", cur_object);
-    // all_objects.push(cur_object);
-    // createOctahedron();
-    // drawObject();
 };
 
 
@@ -431,6 +355,8 @@ function load_object() {
     cur_object.tx = positions[objects_loaded][0];
     cur_object.ty = positions[objects_loaded][1];
     cur_object.tz = positions[objects_loaded][2];
+    cur_object.a = spins[objects_loaded][0];
+    cur_object.beta = spins[objects_loaded][0];
     vertexScaling = vertex_scalings[objects_loaded];
     // load_object(object_names[i]);
 
@@ -443,28 +369,21 @@ function load_object() {
     	function ( object ) {
             /* Need to call draw all of the children
             /* We get the vertices of all of the points */
-            console.log(object);
             /* Create a geometry object from a buffer geometry */
-            // geometry = new THREE.Geometry().fromBufferGeometry( object.children[0].geometry );
-
             children = object.children;
 
             var i = 0;
-            // for(i = 0; i < children.length; i++) {
-                    geometry = new THREE.Geometry().fromBufferGeometry(children[i].geometry);
+            geometry = new THREE.Geometry().fromBufferGeometry(children[i].geometry);
 
-                    console.log(geometry);
-                    /* Get the vertices from the geometry object */
-                    vert = geometry.vertices;
+            // console.log(geometry);
+            /* Get the vertices from the geometry object */
+            vert = geometry.vertices;
 
-                    /* Next, call a function to process the loaded geometry object */
-                    process_object();
-            // }
+            /* Next, call a function to process the loaded geometry object */
+            process_object();
     	},
     	// called when loading is in progresses
     	function ( xhr ) {
-    		// console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
-
     	},
     	// called when loading has errors
     	function ( error ) {
@@ -522,13 +441,13 @@ function process_object() {
         cur_object.vertexNormals = vertexNormals;
         cur_object.vertices = vertices;
 
-        console.log("Object: Created: ", cur_object);
+        // console.log("Object: Created: ", cur_object);
         all_objects.push(cur_object);
         objects_loaded++;
 
         if(objects_loaded >= objects_to_load) {
             /* We are done creating the objects so then we can draw them */
-            console.log("All objects", all_objects);
+            // console.log("All objects", all_objects);
             drawObject();
         } else {
             load_object();
@@ -540,7 +459,7 @@ function process_object() {
         var v1, v2, v3;
         var face;
         var all_tex = geometry.faceVertexUvs[0];
-        console.log("all_tex: ", all_tex);
+        // console.log("all_tex: ", all_tex);
         var face_tex;
         for(i = 0; i < faces.length; i++) {
             face = faces[i];
@@ -917,19 +836,27 @@ function drawObject() {
             var indices = c_obj.indices;
             var vertexNormals = c_obj.vertexNormals;
             var vertices = c_obj.vertices;
+            var a = 0;
+            var beta = 0;
             tx = c_obj.tx;
             ty = c_obj.ty;
             tz = c_obj.tz;
+            a = c_obj.a;
+            beta = c_obj.beta;
 
-            a = a + .05 * alterAlpha;
-            beta = beta + .05 * alterBeta;
-            tx = tx + D_X * trans_x;
-            ty = ty + D_Y * trans_y;
-            tz = tz + D_Z * trans_z;
+            if(MOVE_INDEX == i) {
+                a = a + .05 * alterAlpha;
+                beta = beta + .05 * alterBeta;
+                tx = tx + D_X * trans_x;
+                ty = ty + D_Y * trans_y;
+                tz = tz + D_Z * trans_z;
+            }
 
             c_obj.tx = tx;
             c_obj.ty = ty;
             c_obj.tz = tz;
+            c_obj.a = a;
+            c_obj.beta = beta;
 
             Mx = [1.0,
                   .0,
