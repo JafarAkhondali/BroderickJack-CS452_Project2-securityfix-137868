@@ -29,6 +29,9 @@ precision mediump float;
 attribute vec3 vertexNormal;
 attribute vec4 vertexPosition;
 
+//attribute vec2 tabletextureCoordinate;
+//varying vec2 ftabletextureCoordinate;
+
 // Set up uniforms for modelview, modelview inverse transpose, and projections
 uniform mat4 modelview;
 uniform mat4 modelviewInverseTranspose;
@@ -72,7 +75,8 @@ varying float distance;
 
 /* Texture information */
 attribute vec2 textureCoordinate;
-varying vec2 fTextureCoordinate;
+varying vec2 ftextureCoordinate;
+uniform bool texture_boolean;
 
 /* Use an if statement to decide if you are using a texture or not */
 uniform float use_texture; /* 1-Texture 0-No Texture */
@@ -80,19 +84,19 @@ uniform float use_texture; /* 1-Texture 0-No Texture */
 void main() {
     gl_PointSize = 1.0;
 
-    if(use_texture > 0.0) {
-        gl_Position = vertexPosition;
-        vec4 vi = vertexPosition;
+    //if(use_texture > 0.0) {
+      //  gl_Position = vertexPosition;
+        //vec4 vi = vertexPosition;
 
         // vec4 vf = T * Mx * My * Mw * S * vi;
         // vec4 vf = projection * modelview * vi;
-        vec4 vf = Mx * vi;
+      //  vec4 vf = Mx * vi;
 
-        fTextureCoordinate = textureCoordinate;
+        //ftextureCoordinate = textureCoordinate;
 
-        gl_Position = vf;
+        //gl_Position = vf;
         // vColor = myColor;
-    } else {
+    //} else {
 
         // Part 3.2: calculations in main function ---
         vec4 vi = vertexPosition;
@@ -103,7 +107,7 @@ void main() {
         //p0_test = modelview * p0_test;
         //p0_test = vec4(p0_test.x/p0_test[3], p0_test.y/p0_test[3], p0_test.z/p0_test[3], 1.0);
         //p02 = modelview * p02;
-        vec4 vertexPositionTransformed =   modelview * T * My * Mx * vertexPosition; //Do you need Mx here???
+        vec4 vertexPositionTransformed =   modelview * T * My * Mx * S * vertexPosition; //Do you need Mx here???
 
         // Transform the normal by the inverse transpose of modelview matrix
         // for future lighting calculations
@@ -151,6 +155,11 @@ void main() {
 
         /* Set the position of the vertex equal to the transformed point */
         gl_Position = vi; // change this line to apply the modelview and projection
+    //}
+    
+    if(texture_boolean)
+    {
+        ftextureCoordinate = textureCoordinate;
     }
 }
 
@@ -163,9 +172,8 @@ precision mediump float;
 uniform float use_texture;
 
 /* Texture varying and uniforms */
-varying vec4 vColor;
-varying vec2 fTextureCoordinate;
-uniform sampler2D texMap0;
+
+
 
 // varying vec3 ka_vary, kd_vary, ks_vary;
 uniform vec3 ka, ks, kd;
@@ -200,14 +208,40 @@ vec3 R;
 
 varying float distance;
 
+/* Set up stuff needed for texture */
+varying vec4 vColor;
+uniform bool texture_boolean;
+varying vec2 ftextureCoordinate;
+uniform sampler2D texMap0;
+
 void main() {
-    if(use_texture > 0.0) {
-        vec4 color0 = texture2D(texMap0, fTextureCoordinate);
+    vec3 ka_tex, kd_tex, ks_tex;
+    
+    if(texture_boolean)
+    {
+        
+        vec4 color0 = texture2D( texMap0, ftextureCoordinate );
+        ka_tex = color0.xyz;
+        
+        kd_tex[0] = color0.r;
+        kd_tex[1] = color0.g;
+        kd_tex[2] = color0.b;
+        
+        ks_tex[0] = color0.r;
+        ks_tex[1] = color0.g;
+        ks_tex[2] = color0.b;
+         
+        /*
+        vec4 color0 = texture2D( texMap0, ftextureCoordinate );
         gl_FragColor.r = color0.r;
         gl_FragColor.g = color0.g;
         gl_FragColor.b = color0.b;
-        gl_FragColor.a= 1.0;
-    } else {
+        gl_FragColor.a = 1.0;
+         */
+    }
+    
+    //else {
+    
         /* We need to renormalize i, v, and n because interpolation doesn't normalize them */
         vec3 i_renorm, v_renorm, n_renorm;
         i_renorm = normalize(i);
@@ -231,9 +265,18 @@ void main() {
         vec3 Ra, Rd, Rs;
         vec3 Ra2, Rd2, Rs2;
         /* Ambient reflection */
-        Ra[0] = ka[0] * Ia_pp0[0];
-        Ra[1] = ka[1] * Ia_pp0[1];
-        Ra[2] = ka[2] * Ia_pp0[2];
+        
+        if(texture_boolean)
+        {
+            Ra[0] = ka_tex[0] * Ia_pp0[0];
+            Ra[1] = ka_tex[1] * Ia_pp0[1];
+            Ra[2] = ka_tex[2] * Ia_pp0[2];
+        }
+        else{
+            Ra[0] = ka[0] * Ia_pp0[0];
+            Ra[1] = ka[1] * Ia_pp0[1];
+            Ra[2] = ka[2] * Ia_pp0[2];
+        }
 
         // If you are doing Gouraud shading, you can disregard
         // all the lines from "Start of Phong shading" to
@@ -247,9 +290,18 @@ void main() {
 
         /* Diffuse Reflection */
         float costheta = dot(i_renorm, n_renorm);
-        Rd[0] = kd[0] * Id_pp0[0] * max(costheta, 0.0);
-        Rd[1] = kd[1] * Id_pp0[1] * max(costheta, 0.0);
-        Rd[2] = kd[2] * Id_pp0[2] * max(costheta, 0.0);
+        
+        if(texture_boolean)
+        {
+            Rd[0] = kd_tex[0] * Id_pp0[0] * max(costheta, 0.0);
+            Rd[1] = kd_tex[1] * Id_pp0[1] * max(costheta, 0.0);
+            Rd[2] = kd_tex[2] * Id_pp0[2] * max(costheta, 0.0);
+        }
+        else{
+            Rd[0] = kd[0] * Id_pp0[0] * max(costheta, 0.0);
+            Rd[1] = kd[1] * Id_pp0[1] * max(costheta, 0.0);
+            Rd[2] = kd[2] * Id_pp0[2] * max(costheta, 0.0);
+        }
 
         /* Specular Reflection */
         vec3 r = normalize(2.0 * costheta * n_renorm - i_renorm);
@@ -257,39 +309,78 @@ void main() {
         float shine = pow(max(cosphi, 0.0), alpha);
         float costhetag0 = floor(0.5 * (sign(costheta) + 1.0));
 
-        Rs[0] = ks[0] * Is_pp0[0] * shine * costhetag0;
-        Rs[1] = ks[1] * Is_pp0[1] * shine * costhetag0;
-        Rs[2] = ks[2] * Is_pp0[2] * shine * costhetag0;
-
+        if(texture_boolean)
+        {
+            Rs[0] = ks_tex[0] * Is_pp0[0] * shine * costhetag0;
+            Rs[1] = ks_tex[1] * Is_pp0[1] * shine * costhetag0;
+            Rs[2] = ks_tex[2] * Is_pp0[2] * shine * costhetag0;
+        }
+        else{
+            Rs[0] = ks[0] * Is_pp0[0] * shine * costhetag0;
+            Rs[1] = ks[1] * Is_pp0[1] * shine * costhetag0;
+            Rs[2] = ks[2] * Is_pp0[2] * shine * costhetag0;
+        }
         // Compute the ambient reflection for the first light source
         // using the interpolated lighting components
 
         /* Second light source (spotlight) */
 
         /* Ambient reflection */
-        Ra2[0] = ka[0] * Ia_pp02[0];
-        Ra2[1] = ka[1] * Ia_pp02[1];
-        Ra2[2] = ka[2] * Ia_pp02[2];
-
+        
+        if(texture_boolean)
+        {
+            Ra2[0] = ka_tex[0] * Ia_pp02[0];
+            Ra2[1] = ka_tex[1] * Ia_pp02[1];
+            Ra2[2] = ka_tex[2] * Ia_pp02[2];
+        }
+        else
+        {
+            Ra2[0] = ka[0] * Ia_pp02[0];
+            Ra2[1] = ka[1] * Ia_pp02[1];
+            Ra2[2] = ka[2] * Ia_pp02[2];
+        }
+        
         // Compute the diffuse reflection for the first light source
         // using the interpolated lighting components,
         // and normalized i and n
 
         /* Diffuse Reflection */
+            
         float costheta2 = dot(i_renorm2, n_renorm);
-        Rd2[0] = kd[0] * Id_pp02[0] * max(costheta2, 0.0);
-        Rd2[1] = kd[1] * Id_pp02[1] * max(costheta2, 0.0);
-        Rd2[2] = kd[2] * Id_pp02[2] * max(costheta2, 0.0);
-
+        if(texture_boolean)
+        {
+            Rd2[0] = kd_tex[0] * Id_pp02[0] * max(costheta2, 0.0);
+            Rd2[1] = kd_tex[1] * Id_pp02[1] * max(costheta2, 0.0);
+            Rd2[2] = kd_tex[2] * Id_pp02[2] * max(costheta2, 0.0);
+        }
+        else{
+            
+            Rd2[0] = kd[0] * Id_pp02[0] * max(costheta2, 0.0);
+            Rd2[1] = kd[1] * Id_pp02[1] * max(costheta2, 0.0);
+            Rd2[2] = kd[2] * Id_pp02[2] * max(costheta2, 0.0);
+        }
+        
         /* Specular Reflection */
         vec3 r2 = normalize(2.0 * costheta2 * n_renorm - i_renorm2);
         float cosphi2 = dot(r2, v_renorm);
         float shine2 = pow(max(cosphi2, 0.0), alpha);
         float costhetag02 = floor(0.5 * (sign(costheta2) + 1.0));
 
-        Rs2[0] = ks[0] * Is_pp02[0] * shine2 * costhetag02 * toggleSpecular;
-        Rs2[1] = ks[1] * Is_pp02[1] * shine2 * costhetag02 * toggleSpecular;
-        Rs2[2] = ks[2] * Is_pp02[2] * shine2 * costhetag02 * toggleSpecular;
+        
+        if(texture_boolean)
+        {
+            
+            Rs2[0] = ks_tex[0] * Is_pp02[0] * shine2 * costhetag02 * toggleSpecular;
+            Rs2[1] = ks_tex[1] * Is_pp02[1] * shine2 * costhetag02 * toggleSpecular;
+            Rs2[2] = ks_tex[2] * Is_pp02[2] * shine2 * costhetag02 * toggleSpecular;
+            
+        }
+        else
+        {
+            Rs2[0] = ks[0] * Is_pp02[0] * shine2 * costhetag02 * toggleSpecular;
+            Rs2[1] = ks[1] * Is_pp02[1] * shine2 * costhetag02 * toggleSpecular;
+            Rs2[2] = ks[2] * Is_pp02[2] * shine2 * costhetag02 * toggleSpecular;
+        }
 
         // Calculate the total reflected light by summing
         // the ambient, diffuse, and specular reflections for
@@ -303,8 +394,9 @@ void main() {
 
         /* Set the fragment color */
         gl_FragColor = vec4(R[0], R[1], R[2], 1.0);
-    }
+    //}
 }
+
 
 </script>
 
@@ -317,9 +409,11 @@ void main() {
 <script type="text/javascript" src="LoadOBJ.js"></script>
 <script type="text/javascript" src="Project2.js"></script>
 <script type="text/javascript" src="object.js"></script>
+<script type="text/javascript" src="table.js"></script>
 
 
 <img id="texture1", hidden  src="apple_texture.jpg"/>
+<img id="wood", hidden src="wood.jpeg"/>
 <!-- <img id="texture1", hidden  src="texture1.jpg"/> -->
 <!-- <script type="text/javascript" src="Geometry.js"></script> -->
 </head>

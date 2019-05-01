@@ -8,21 +8,26 @@ irex: https://www.turbosquid.com/3d-models/3d-indominus-rex-rig-irex-1182227
 coke bottle: https://www.turbosquid.com/FullPreview/Index.cfm/ID/540827
 
 */
-var MOVE_INDEX = 0; /* The index of which object is going to be allowed to move */
+var MOVE_INDEX = 1; /* The index of which object is going to be allowed to move */
 var objects_to_load = 2;
+var js_objects_to_load = 1;
 var objects_loaded = 0;
 var vertex_scalings = [];
 var positions = [];
 var object_names = [];
+var js_object_texture_names = [];
 var kds = [];
 var kas = [];
 var kss = [];
+var scales = []; /* Scales for each of the objects */
 
 var gl;
 var numVertices;
 var numTriangles;
 var myShaderProgram;
 var vertexScaling; /* Used to scale the vertices to make sure the object fits */
+
+var texture_boolean = false;
 
 /* Global Uniforms */
 var MUniform;
@@ -33,6 +38,9 @@ var PosUniform2;  /* Uniform for position of the point light source */
 
 /* Texture Uniform */
 var TexFlagUniform;
+
+var textureImage;
+var myImage;
 
 /* Incident Intensity Uniforms: Point Light Source */
 var IaUniform;
@@ -68,9 +76,9 @@ var tx, ty, tz; /* The translation in the x, y, and z directions */
 var trans_x;
 var trans_y;
 var trans_x;
-var D_X = 0.5;
-var D_Y = 0.5;
-var D_Z = 0.5;
+var D_X = 5.0;
+var D_Y = 5.0;
+var D_Z = 5.0;
 
 /* Scaling */
 var scale_x = 0.0;
@@ -122,6 +130,9 @@ function initGL() {
 
     myShaderProgram = initShaders( gl, "vertex-shader", "fragment-shader" );
     gl.useProgram( myShaderProgram );
+    
+    myImage = document.getElementById( "wood");
+    //console.log( myImage);
 
     /* Get all of the uniform locations */
     MUniform = gl.getUniformLocation(myShaderProgram, "modelview");
@@ -148,6 +159,7 @@ function initGL() {
     Myuniform = gl.getUniformLocation( myShaderProgram, "My" );
     Tuniform = gl.getUniformLocation( myShaderProgram, "T");
     Suniform = gl.getUniformLocation( myShaderProgram, "S");
+    textureBooleanUniform = gl.getUniformLocation( myShaderProgram, "texture_boolean");
 
     /* Initial translation is 0 */
     tx = 0;
@@ -286,7 +298,7 @@ function initGL() {
         // Define bottom plane
         var bottom = -400.0;
         // Define near plane
-        var near = 10.0;
+        var near = 1.0;
         // Define far plane
         var far = 400.0;
 
@@ -331,31 +343,90 @@ function initGL() {
         projection_select = 1; /* 1: Orthographic 0: Perspective */
 
     // } else {
+    
     if(use_texture > 0.0) {
         /* Create a buffer for the texture */
+        
+        /*
         var texture1 = document.getElementById("texture1");
         textureImage = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, textureImage);
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); /* Must flip because images assume the origin is in the top left */
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, texture1); /* Sends data to the GPU */
+        //gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, texture1); /* Sends data to the GPU */
         /* We will use linear mipmapping to avoid undersampling and edges */
+        /*
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
         gl.generateMipmap(gl.TEXTURE_2D);
+         */
     }
 
     /* We need to load the object */
     vertex_scalings = [1.0, 1.0, 10.0, 1.0];
     // var object_names = ['coke_bottle.OBJ', 'Irex_obj.obj', 'TV.obj', 'apple.obj'];
-    object_names = ['coke_bottle.OBJ', 'apple.obj'];
-    positions = [[0, 0, 0], [-100, -100, 0]];
-    spins = [[0,0], [0,0]];
-    kas = [[0.545, 0.27, 0.09], [0.6, 0.1, 0.1]];
-    kds = [[0.545, 0.27, 0.09], [0.6, 0.1, 0.1]];
-    kss = [[0.545, 0.27, 0.09], [0.6, 0.1, 0.1]];
+    object_names = ['coke_bottle.OBJ', 'apple.obj', 'table.js'];
+    js_object_texture_names = [ 'wood' ];
+    positions = [[0, 100, 0], [-100, -100, 0], [0, 10, 0] ];
+    spins = [[0,0], [0,0], [0,0]];
+    kas = [[0.545, 0.27, 0.09], [0.6, 0.1, 0.1], [0.2, 0.2, 0.2]];
+    kds = [[0.545, 0.27, 0.09], [0.6, 0.1, 0.1], [0.2, 0.2, 0.2]];
+    kss = [[0.545, 0.27, 0.09], [0.6, 0.1, 0.1], [0.2, 0.2, 0.2]];
+    scales = [[0.5, 0.5, 0.5], [1.0, 1.0, 1.0], [200.0, 200.0, 200.0]];
     load_object();
+    //load_js_object();
 };
 
+function load_js_object(){
+    var object_name = object_names[objects_loaded];
+    var texture_name = js_object_texture_names[(objects_loaded - objects_to_load)];
+    console.log(object_name);
+    console.log(((objects_loaded - objects_to_load)));
+    console.log(js_object_texture_names[0]);
+    console.log(texture_name);
+    
+    cur_object = new Object();
+    cur_object.name = object_name;
+    cur_object.textureName = texture_name;
+    cur_object.sx = scales[objects_loaded][0];
+    cur_object.sy = scales[objects_loaded][1];
+    cur_object.sz = scales[objects_loaded][2];
+    cur_object.tx = positions[objects_loaded][0];
+    cur_object.ty = positions[objects_loaded][1];
+    cur_object.tz = positions[objects_loaded][2];
+    cur_object.a = spins[objects_loaded][0];
+    cur_object.beta = spins[objects_loaded][0];
+    //want cur_object.ka, cur_object.kd, cur_object.ks to all come from textures I think
+    console.log("here: ", cur_object);
+    vertexScaling = vertex_scalings[objects_loaded];
+    
+    cur_object.vertices = getVertices(); // vertices and faces are defined in object.js
+    var numVertices = cur_object.vertices.length;
+    
+    cur_object.indices = getFaces();
+    var numIndices = cur_object.indices.length;
+    var numTriangles = numIndices / 3;
+    
+    var faceNormals = getFaceNormals( cur_object.vertices, cur_object.indices, numTriangles );
+    
+    cur_object.vertexNormals = getVertexNormals(cur_object.vertices, cur_object.indices, faceNormals , numVertices, numIndices);
+    
+    cur_object.texCoordinates = getTexture();
+    
+    //cur_object.myImage = document.getElementById( cur_object.textureName ); //sets image to texture corresponding to the given name in js_object_texture_names
+    
+    all_objects.push(cur_object);
+    console.log(all_objects);
+    //console.log("pushed up, all_objects[2] is: " + (all_objects[2]).name);
+    objects_loaded++;
+    
+    if (objects_loaded >= (objects_to_load + js_objects_to_load))
+    {
+        drawObject();
+    }
+    else{
+        load_js_object();
+    }
+}
 
 function load_object() {
     // instantiate a loader
@@ -367,9 +438,9 @@ function load_object() {
 
     cur_object = new Object();
     cur_object.name = object_name;
-    cur_object.sx = 1.0;
-    cur_object.sy = 1.0;
-    cur_object.sz = 1.0;
+    cur_object.sx = scales[objects_loaded][0];
+    cur_object.sy = scales[objects_loaded][1];
+    cur_object.sz = scales[objects_loaded][2];
     cur_object.tx = positions[objects_loaded][0];
     cur_object.ty = positions[objects_loaded][1];
     cur_object.tz = positions[objects_loaded][2];
@@ -470,14 +541,18 @@ function process_object() {
         if(objects_loaded >= objects_to_load) {
             /* We are done creating the objects so then we can draw them */
             // console.log("All objects", all_objects);
-            drawObject();
+            load_js_object();
+            //drawObject();
         } else {
             load_object();
         }
 
-    } else {
+    }
+    
+   
+   //else {
         /* We are going to use the texture */
-        var indexCounter = 0;
+     /*   var indexCounter = 0;
         var v1, v2, v3;
         var face;
         var all_tex = geometry.faceVertexUvs[0];
@@ -486,7 +561,7 @@ function process_object() {
         for(i = 0; i < faces.length; i++) {
             face = faces[i];
             /* We must get the three vertices for each face */
-            v1 = vert[face.a];
+         /*   v1 = vert[face.a];
             v2 = vert[face.b];
             v3 = vert[face.c];
             vertices.push(v1.x);
@@ -504,7 +579,7 @@ function process_object() {
 
             /* Now we need to add the texture coordinates for each vertex */
             /* We have an array of texture coordianates for each face that we need to index */
-            face_tex = all_tex[i];
+         /*   face_tex = all_tex[i];
             texCoordinates.push(face_tex[0].x);
             texCoordinates.push(face_tex[0].y);
             texCoordinates.push(face_tex[1].x);
@@ -513,25 +588,25 @@ function process_object() {
             texCoordinates.push(face_tex[2].y);
 
             /* Now we need to add the index of the vertex (this will just increment) */
-            indices.push(indexCounter++);
+         /*   indices.push(indexCounter++);
             indices.push(indexCounter++);
             indices.push(indexCounter++);
         }
 
         /* We need to send the texture */
         /* Create a buffer for the texture */
-        var texture1 = document.getElementById("texture1");
+      /*  var texture1 = document.getElementById("texture1");
         textureImage = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, textureImage);
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); /* Must flip because images assume the origin is in the top left */
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, texture1); /* Sends data to the GPU */
+       // gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, texture1); /* Sends data to the GPU */
         /* We will use linear mipmapping to avoid undersampling and edges */
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      /*  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
         gl.generateMipmap(gl.TEXTURE_2D);
 
         /* Now we need to send all of the data */
-        var vertexBuffer = gl.createBuffer();
+      /*  var vertexBuffer = gl.createBuffer();
         gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
         gl.bufferData( gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW);
         console.log(vertices);
@@ -545,7 +620,7 @@ function process_object() {
         gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(indices), gl.STATIC_DRAW);
         console.log(indices);
         /* Create attribute for texture coordinates */
-        var textureCoordinateBuffer = gl.createBuffer();
+      /*  var textureCoordinateBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordinateBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, flatten(texCoordinates), gl.STATIC_DRAW);
         console.log("texCoordinates: ", texCoordinates);
@@ -554,14 +629,18 @@ function process_object() {
         gl.vertexAttribPointer(texCoordinate, 2, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(texCoordinate);
     }
+
     /* Try rendering the object with the texture coordinate if the flag is set */
 
     // render the object
-    if(objects_loaded >= objects_to_load) {
+    
+    if(objects_loaded >= (objects_to_load + js_objects_to_load)) {
         console.log(all_objects);
         console.log("All objects: ", all_objects);
         drawObject();
     }
+    
+    
     // drawObject();
 }
 
@@ -691,7 +770,7 @@ function createOctahedron() {
         vertices2[i] = vertices2[i] * 1;
     }
     console.log(vertices2);
-
+/*
     var vertexBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
     gl.bufferData( gl.ARRAY_BUFFER, flatten(vertices2), gl.STATIC_DRAW);
@@ -700,18 +779,15 @@ function createOctahedron() {
     gl.vertexAttribPointer(myPosition, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(myPosition);
 
-    var iBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
-    gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(indexList2), gl.STATIC_DRAW);
-
     /* Create attribute for texture coordinates */
-    var textureCoordinateBuffer = gl.createBuffer();
+  /* var textureCoordinateBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordinateBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(textureCoordinates), gl.STATIC_DRAW);
 
     var texCoordinate = gl.getAttribLocation(myShaderProgram, "textureCoordinate");
     gl.vertexAttribPointer(texCoordinate, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(texCoordinate);
+    */
 }
 
 // FOLLOWING CODE SKELETON FOR getFaceNormals() NEEDS TO BE COMPLETED
@@ -801,13 +877,16 @@ function set_perspective() {
 }
 
 function drawObject() {
+    /*
     if(use_texture > 0) {
+        /*
         gl.uniform1i(gl.getUniformLocation(myShaderProgram, "texMap0"), 0);
         gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
         gl.drawElements( gl.TRIANGLES, 24, gl.UNSIGNED_BYTE, 0 );
-        var P; /* Projection matrix */
+         */
+    /*    var P; /* Projection matrix */
         // console.log("projection_select: ", projection_select);
-        if(projection_select) {
+   /*     if(projection_select) {
             P = P_ortho;
         } else {
             // console.log("Here");
@@ -815,7 +894,7 @@ function drawObject() {
         }
         gl.uniformMatrix4fv(PUniform, false, P);
 
-        a = a + .05 * alterAlpha;
+        a = a + .1 * alterAlpha;
         Mx = [1.0,
               .0,
               .0,
@@ -836,7 +915,7 @@ function drawObject() {
         gl.uniformMatrix4fv( Mxuniform, false, Mx );
 
     } else {
-
+*/
         var P; /* Projection matrix */
         // console.log("projection_select: ", projection_select);
         if(projection_select) {
@@ -854,7 +933,7 @@ function drawObject() {
         /* Clear the screen */
         gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
         /* Send all of the data for each of the objects */
-        for(i = 0; i < all_objects.length; i++) {
+        for(i = 0; i < objects_to_load; i++) {
             var c_obj = all_objects[i];
             var indices = c_obj.indices;
             var vertexNormals = c_obj.vertexNormals;
@@ -874,8 +953,8 @@ function drawObject() {
             beta = c_obj.beta;
 
             if(MOVE_INDEX == i) {
-                a = a + .05 * alterAlpha;
-                beta = beta + .05 * alterBeta;
+                a = a + .1 * alterAlpha;
+                beta = beta + .1 * alterBeta;
                 tx = tx + D_X * trans_x;
                 ty = ty + D_Y * trans_y;
                 tz = tz + D_Z * trans_z;
@@ -963,6 +1042,7 @@ function drawObject() {
 
 
              /* Send the variables to the unifomrs */
+            gl.uniform1f(textureBooleanUniform, false);
             gl.uniform3f(KaUniform, ka[0], ka[1], ka[2]);
             gl.uniform3f(KdUniform, kd[0], kd[1], kd[2]);
             gl.uniform3f(KsUniform, ks[0], ks[1], ks[2]);
@@ -978,6 +1058,25 @@ function drawObject() {
 
             /* Create a buffer for the vertex normals */
             var vertexNormal = gl.getAttribLocation(myShaderProgram, "vertexNormal");
+            //console.log("Vertex Normal location: " + gl.getAttribLocation(myShaderProgram, "vertexNormal"));
+            
+            /* Create and bind to the texture buffers so that they are at least there */
+            //var textureBuffer = gl.createBuffer();
+            //gl.bindBuffer( gl.ARRAY_BUFFER, textureBuffer );
+          //  gl.bufferData( gl.ARRAY_BUFFER, flatten(textureCoordinates), gl.STATIC_DRAW );
+            //console.log(flatten(textureCoordinates).length);
+            
+            var myTexture = gl.getAttribLocation( myShaderProgram, "textureCoordinate" );
+            //console.log( "tex attrib: " + gl.getAttribLocation( myShaderProgram, "textureCoordinate" ));
+            gl.vertexAttribPointer( myTexture, 2, gl.FLOAT, false, 0, 0);
+            gl.disableVertexAttribArray(myTexture);
+            //gl.enableVertexAttribArray( myTexture );
+            
+            //textureImage = gl.createTexture();
+            //gl.bindTexture( gl.TEXTURE_2D, textureImage)
+            
+            /****** END OF TEXTURE STUFF *************/
+            
             var normalsBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, normalsBuffer);
             gl.bufferData(gl.ARRAY_BUFFER, flatten(vertexNormals), gl.STATIC_DRAW);
@@ -995,8 +1094,189 @@ function drawObject() {
             gl.drawElements( gl.TRIANGLES, 3 * numTriangles, gl.UNSIGNED_SHORT, 0 )
 
         }
-
-    }
+        
+//this section is meant to run for js loaded objects
+    console.log("All objects: ", all_objects);
+        for(i = objects_to_load; i < all_objects.length; i++) {
+            gl.uniform1f(textureBooleanUniform, true);
+            var c_obj = all_objects[i];
+            console.log(i);
+            console.log("current object = " + c_obj.name);
+            
+            var indices = c_obj.indices;
+            var vertexNormals = c_obj.vertexNormals;
+            var vertices = c_obj.vertices;
+            var textureCoordinates = c_obj.texCoordinates;
+            var a = 0;
+            var beta = 0;
+            //var ka = c_obj.ka;
+            //var kd = c_obj.kd;
+            //var ks = c_obj.ks;
+            var sx = c_obj.sx;
+            var sy = c_obj.sy;
+            var sz = c_obj.sz;
+            tx = c_obj.tx;
+            ty = c_obj.ty;
+            tz = c_obj.tz;
+            a = c_obj.a;
+            beta = c_obj.beta;
+            
+            if(MOVE_INDEX == i) {
+                a = a + .1 * alterAlpha;
+                beta = beta + .1 * alterBeta;
+                tx = tx + D_X * trans_x;
+                ty = ty + D_Y * trans_y;
+                tz = tz + D_Z * trans_z;
+                sx = sx + D_SX * scale_x;
+                sy = sy + D_SY * scale_y;
+                sz = sz + D_SZ * scale_z;
+            }
+            
+            c_obj.tx = tx;
+            c_obj.ty = ty;
+            c_obj.tz = tz;
+            c_obj.a = a;
+            c_obj.beta = beta;
+            c_obj.sx = sx;
+            c_obj.sy = sy;
+            c_obj.sz = sz;
+            
+            Mx = [1.0,
+                  .0,
+                  .0,
+                  .0,
+                  .0,
+                  Math.cos(a),
+                  -Math.sin(a),
+                  .0,
+                  .0,
+                  Math.sin(a),
+                  Math.cos(a),
+                  .0,
+                  .0,
+                  .0,
+                  .0,
+                  1.0];
+            
+            My = [Math.cos(beta),
+                  .0,
+                  -Math.sin(beta),
+                  .0,
+                  .0,
+                  1.0,
+                  .0,
+                  .0,
+                  Math.sin(beta),
+                  .0,
+                  Math.cos(beta),
+                  .0,
+                  .0,
+                  .0,
+                  .0,
+                  1.0];
+            T = [1.0,
+                 0.0,
+                 0.0,
+                 0.0,
+                 0.0,
+                 1.0,
+                 0.0,
+                 0.0,
+                 0.0,
+                 0.0,
+                 1.0,
+                 0.0,
+                 tx,
+                 ty,
+                 tz,
+                 1.0];
+            S = [sx,
+                 0.0,
+                 0.0,
+                 0.0,
+                 0.0,
+                 sy,
+                 0.0,
+                 0.0,
+                 0.0,
+                 0.0,
+                 sz,
+                 0.0,
+                 0.0,
+                 0.0,
+                 0.0,
+                 1.0];
+            
+            // console.log("S: ", S);
+            
+            
+            /* Send the variables to the unifomrs */
+            /*
+            gl.uniform3f(KaUniform, ka[0], ka[1], ka[2]);
+            gl.uniform3f(KdUniform, kd[0], kd[1], kd[2]);
+            gl.uniform3f(KsUniform, ks[0], ks[1], ks[2]);
+             */
+            gl.uniformMatrix4fv( Mxuniform, false, Mx );
+            gl.uniformMatrix4fv( Myuniform, false, My );
+            gl.uniformMatrix4fv(Tuniform, false, T);
+            gl.uniformMatrix4fv(Suniform, false, S);
+            
+            
+            
+            /* Create, bind, and send data to the buffer for the vertices */
+            var vertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW);
+            
+            var vertexPosition = gl.getAttribLocation(myShaderProgram, "vertexPosition");
+            //console.log( "vertex atrrib: " + gl.getAttribLocation(myShaderProgram, "vertexPosition"));
+            
+            gl.vertexAttribPointer(vertexPosition, 4, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(vertexPosition);
+            //gl.drawElements( gl.TRIANGLES, 3 * numTriangles, gl.UNSIGNED_SHORT, 0 )
+            
+            
+            /* We now need to send the values via buffers */
+            
+            var textureBuffer = gl.createBuffer();
+            gl.bindBuffer( gl.ARRAY_BUFFER, textureBuffer );
+            gl.bufferData( gl.ARRAY_BUFFER, flatten(textureCoordinates), gl.STATIC_DRAW );
+            //console.log(flatten(textureCoordinates).length);
+            
+            var myTexture = gl.getAttribLocation( myShaderProgram, "textureCoordinate" );
+            //console.log( "tex attrib: " + gl.getAttribLocation( myShaderProgram, "textureCoordinate" ));
+            gl.vertexAttribPointer( myTexture, 2, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray( myTexture );
+            
+            textureImage = gl.createTexture();
+            gl.bindTexture( gl.TEXTURE_2D, textureImage)
+            gl.pixelStorei( gl.UNPACK_FLIP_Y_WEBGL, true);
+            //gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, cur_object.myImage );
+            gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, myImage);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            //gl.generateMipmap( gl.TEXTURE_2D);
+            
+            var indexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(indices), gl.STATIC_DRAW);
+            
+            /* Create a buffer for the vertex normals */
+            var vertexNormal = gl.getAttribLocation(myShaderProgram, "vertexNormal");
+            var normalsBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, normalsBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, flatten(vertexNormals), gl.STATIC_DRAW);
+            gl.vertexAttribPointer(vertexNormal, 3, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(vertexNormal);
+            
+            gl.uniform1i(gl.getUniformLocation(myShaderProgram, "texMap0"), 0);
+            //gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
+            //var numVertices = 24;
+            gl.drawElements( gl.TRIANGLES, 156, gl.UNSIGNED_BYTE, 0 ); //(IF U16, UNSIGNED_SHORT)
+        
+            
+        }
+    //}
     requestAnimFrame( drawObject );
 }
 
