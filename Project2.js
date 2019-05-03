@@ -130,6 +130,7 @@ function initGL() {
     gl.enable(gl.DEPTH_TEST);
     gl.viewport( 0, 0, 512, 512 );
     gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
+    initBkgnd();
 
     myShaderProgram = initShaders( gl, "vertex-shader", "fragment-shader" );
     backgroundShaderProgram = initShaders( gl, "vertex-shader-background", "fragment-shader-background");
@@ -383,6 +384,24 @@ function initGL() {
     load_object();
     //load_js_object();
 };
+
+function initBkgnd() {
+    backTex = gl.createTexture();
+    backTex.Img = new Image();
+    backTex.Img.onload = function() {
+        handleBkTex(backTex);
+    }
+    backTex.Img.src = "back.jpg";
+}
+
+function handleBkTex(tex) {
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, tex.Img);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+}
 
 
 // Fill the buffer with the values that define a quad.
@@ -1072,6 +1091,9 @@ function drawObject() {
 
         /* Clear the screen */
         gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
+        gl.clearColor( 0.0, 0.0, 0.0, 0.0 );
+        initBkgnd();
+
         /* Send all of the data for each of the objects */
         for(i = 0; i < objects_to_load; i++) {
             var c_obj = all_objects[i];

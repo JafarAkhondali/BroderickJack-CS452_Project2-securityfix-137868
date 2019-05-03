@@ -466,8 +466,10 @@ void main() {
 </head>
 
 <body onload = "initGL()" onkeydown="moveObjectKeys(event)" onkeyup="stopObjectKeys(event)">
-    <canvas id="gl-canvas" height="512" width="512">
+<!--    <canvas id="gl-canvas" height="512" width="512">-->
+<canvas id="gl-canvas" style="background: url('back.jpg')" width="512" height="512">
     </canvas>
+    
     <div class=row>
         <button id="orthographic" class=select onclick="set_orthographic()">
             Orthographic
