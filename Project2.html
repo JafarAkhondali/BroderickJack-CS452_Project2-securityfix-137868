@@ -21,6 +21,38 @@
             text-align: center;
         }
     </style>
+    
+<script id="vertex-shader-background" type="x-shader/x-vertex">
+    precision mediump float;
+    attribute vec4 aPosition;
+    varying vec4 vPosition;
+    
+    void main()
+    {
+        vPosition = aPosition;
+        gl_Position = aPosition;
+        gl_Position.z = 1.0;
+    }
+    
+    
+ </script>
+    
+<script id="fragment-shader-background" type="x-shader/x-fragment">
+    precision mediump float;
+    uniform samplerCube u_skybox;
+    uniform mat4 u_viewDirectionProjectionInverse;
+    
+    varying vec4 vPosition;
+    void main() {
+        vec4 t = u_viewDirectionProjectionInverse * vPosition;
+        gl_FragColor = textureCube(u_skybox, normalize(t.xyz / t.w));
+    }
+    
+    
+</script>
+    
+    
+    
 <script id="vertex-shader" type="x-shader/x-vertex">
 // Step 3.2: Lighting Calculations in Vertex Shader
 precision mediump float;
@@ -213,6 +245,9 @@ varying vec4 vColor;
 uniform bool texture_boolean;
 varying vec2 ftextureCoordinate;
 uniform sampler2D texMap0;
+
+//Set up cubeMap
+
 
 void main() {
     vec3 ka_tex, kd_tex, ks_tex;
@@ -410,10 +445,22 @@ void main() {
 <script type="text/javascript" src="Project2.js"></script>
 <script type="text/javascript" src="object.js"></script>
 <script type="text/javascript" src="table.js"></script>
+<script type="text/javascript" src="floor.js"></script>
 
 
 <img id="texture1", hidden  src="apple_texture.jpg"/>
 <img id="wood", hidden src="wood.jpeg"/>
+<img id="gray_carpet", hidden src = "gray_carpet.jpg"/>
+<img id="red_carpet", hidden src = "square_persian.jpg"/>
+<img id="front", hidden src = "front.jpg"/>
+<img id="right", hidden src = "right.jpg"/>
+<img id="left", hidden src = "left.jpg"/>
+<img id="back", hidden src = "back.jpg"/>
+<img id="top", hidden src = "top.jpg"/>
+<img id="bottom", hidden src = "bottom.jpg"/>
+
+
+
 <!-- <img id="texture1", hidden  src="texture1.jpg"/> -->
 <!-- <script type="text/javascript" src="Geometry.js"></script> -->
 </head>

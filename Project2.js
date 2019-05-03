@@ -8,9 +8,9 @@ irex: https://www.turbosquid.com/3d-models/3d-indominus-rex-rig-irex-1182227
 coke bottle: https://www.turbosquid.com/FullPreview/Index.cfm/ID/540827
 
 */
-var MOVE_INDEX = 1; /* The index of which object is going to be allowed to move */
-var objects_to_load = 2;
-var js_objects_to_load = 1;
+var MOVE_INDEX = 0; /* The index of which object is going to be allowed to move */
+var objects_to_load = 3;
+var js_objects_to_load = 2;
 var objects_loaded = 0;
 var vertex_scalings = [];
 var positions = [];
@@ -25,6 +25,7 @@ var gl;
 var numVertices;
 var numTriangles;
 var myShaderProgram;
+var backgroundShaderProgram;
 var vertexScaling; /* Used to scale the vertices to make sure the object fits */
 
 var texture_boolean = false;
@@ -39,8 +40,8 @@ var PosUniform2;  /* Uniform for position of the point light source */
 /* Texture Uniform */
 var TexFlagUniform;
 
-var textureImage;
-var myImage;
+//var textureImage;
+//var myImage;
 
 /* Incident Intensity Uniforms: Point Light Source */
 var IaUniform;
@@ -117,6 +118,8 @@ var alterBeta = .0;
 var cur_object;
 var all_objects = [];
 
+var faces = [];
+var viewDirectionProjectionInverseMatrix;
 
 function initGL() {
     var canvas = document.getElementById( "gl-canvas" );
@@ -129,9 +132,13 @@ function initGL() {
     gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
 
     myShaderProgram = initShaders( gl, "vertex-shader", "fragment-shader" );
+    backgroundShaderProgram = initShaders( gl, "vertex-shader-background", "fragment-shader-background");
+    //gl.useProgram( myShaderProgram );
+    //gl.useProgram( backgroundShaderProgram);
+    //setGeometry();
     gl.useProgram( myShaderProgram );
     
-    myImage = document.getElementById( "wood");
+    //myImage = document.getElementById( "wood");
     //console.log( myImage);
 
     /* Get all of the uniform locations */
@@ -229,7 +236,7 @@ function initGL() {
                                                             0.0,
                                                             1.0];
 
-
+        viewDirectionProjectionInverseMatrix = modelviewInverseTranspose;
         /* Send the model view matrix and the modelview inverse transpose matrix */
         gl.uniformMatrix4fv(MUniform, false, M);
         gl.uniformMatrix4fv(MVitUniform, false, modelviewInverseTranspose);
@@ -244,9 +251,9 @@ function initGL() {
         gl.uniform3f(PosUniform2, p02[0], p02[1], p02[2]);
 
         /* Incident Components for the first light source */
-        var Ia = vec3(0.7, 0.6, 0.6);
-        var Id = vec3(0.7, 0.3, 0.7);
-        var Is = vec3(0.4, 0.4, 0.4);
+        var Ia = vec3(.7, .7, 1.0);
+        var Id = vec3(.7, .7, 1.0);
+        var Is = vec3(.7, .7, 1.0);
 
         /* Incident components for the spotlight */
         var Ia2 = vec3(0.5, 0.8, 0.8);
@@ -290,17 +297,17 @@ function initGL() {
         // Step 2: Set up orthographic and perspective projections
 
         // Define left plane
-        var left = -250.0;
+        var left = -100.0;
         // Define right plane
-        var right = 250.0;
+        var right = 100.0;
         // Define top plane
-        var top = 400.0;
+        var top = 100.0;
         // Define bottom plane
-        var bottom = -400.0;
+        var bottom = -100.0;
         // Define near plane
-        var near = 1.0;
+        var near = 50.0;
         // Define far plane
-        var far = 400.0;
+        var far = 300.0;
 
         /* Set up orthographic projection matrix P_orth using above planes */
         P_ortho = [2.0/ (right-left),
@@ -364,21 +371,143 @@ function initGL() {
     /* We need to load the object */
     vertex_scalings = [1.0, 1.0, 10.0, 1.0];
     // var object_names = ['coke_bottle.OBJ', 'Irex_obj.obj', 'TV.obj', 'apple.obj'];
-    object_names = ['coke_bottle.OBJ', 'apple.obj', 'table.js'];
-    js_object_texture_names = [ 'wood' ];
-    positions = [[0, 100, 0], [-100, -100, 0], [0, 10, 0] ];
-    spins = [[0,0], [0,0], [0,0]];
-    kas = [[0.545, 0.27, 0.09], [0.6, 0.1, 0.1], [0.2, 0.2, 0.2]];
-    kds = [[0.545, 0.27, 0.09], [0.6, 0.1, 0.1], [0.2, 0.2, 0.2]];
-    kss = [[0.545, 0.27, 0.09], [0.6, 0.1, 0.1], [0.2, 0.2, 0.2]];
-    scales = [[0.5, 0.5, 0.5], [1.0, 1.0, 1.0], [200.0, 200.0, 200.0]];
+    object_names = ['wineglass.obj', 'apple.obj','plate.obj', 'table.js', 'floor.js'];
+    js_object_texture_names = [ 'wood', 'red_carpet' ];
+    positions = [[0,20,0],[0, 7, -20], [-40, 20, 0], [-30, 10, 0], [-30, -50, 0] ];
+    spins = [[0,0], [0,0], [0,0], [0,0],[0,0]];
+    kas = [[0.2,.2,.2], [0.6, 0.1, 0.1], [.9,.9,1.0],[0.2, 0.2, 0.2], [0.2, 0.2, 0.2]];
+    kds = [[0.2,.2,.2], [0.6, 0.1, 0.1], [.9,.9,1.0],[0.2, 0.2, 0.2], [0.2, 0.2, 0.2]];
+    kss = [[0.2,.2,.2], [0.6, 0.1, 0.1], [.9,.9,1.0],[0.2, 0.2, 0.2], [0.2, 0.2, 0.2]];
+    scales = [[2.5, 2.5, 2.5], [.250, .250, 0.250], [0.1,0.1,0.1],[100.0, 100.0, 100.0], [200.0, 200.0, 200.0]];
+    setGeometry();
     load_object();
     //load_js_object();
 };
 
+
+// Fill the buffer with the values that define a quad.
+function setGeometry() {
+    //faces = ['right.jpg', 'left.jpg', 'top.jpg', 'bottom.jpg', 'front.jpg','back.jpg'];
+    
+    
+    var eye = vec3(100.0, 50.0, 50.0);
+    
+    // Define at point (use vec3 in MV.js)
+    var at_point = vec3(0.0, 0.0, 0.0); /* Use the look at point at the origin */
+    
+    // Define vup vector (use vec3 in MV.js)
+    var vup = vec3(0.0, 1.0, 0.0); /* Camera is vertical - May need to change to point at the object better */
+    
+    // Obtain n (use subtract and normalize in MV.js)
+    var n = normalize(subtract(eye, at_point));
+    
+    // Obtain u (use cross and normalize in MV.js)
+    var u = normalize(cross(vup, n));
+    
+    // Obtain v (use cross and normalize in MV.js)
+    var v = normalize(cross(n, u));
+    
+    // Set up Model-View matrix M and send M as uniform to shader
+    var M = [u[0],
+             v[0],
+             n[0],
+             0,
+             u[1],
+             v[1],
+             n[1],
+             0,
+             u[2],
+             v[2],
+             n[2],
+             0,
+             -1*eye[0]*u[0] - eye[1]*u[1] - eye[2]*u[2],
+             -1*eye[0]*v[0] - eye[1]*v[1] - eye[2]*v[2],
+             -1*eye[0]*n[0] - eye[1]*n[1] - eye[2]*n[2],
+             1.0];
+    
+    var modelviewInverseTranspose =     [u[0],
+                                         v[0],
+                                         n[0],
+                                         eye[0],
+                                         u[1],
+                                         v[1],
+                                         n[1],
+                                         eye[1],
+                                         u[2],
+                                         v[2],
+                                         n[2],
+                                         eye[2],
+                                         0.0,
+                                         0.0,
+                                         0.0,
+                                         1.0];
+    
+    viewDirectionProjectionInverseMatrix = modelviewInverseTranspose;
+    
+    
+    
+    gl.useProgram( backgroundShaderProgram);
+    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
+    var vPosition = gl.getAttribLocation(backgroundShaderProgram, "aPosition");
+    
+    var frontImage = document.getElementById("front");
+    var rightImage = document.getElementById("right");
+    var backImage = document.getElementById("back");
+    var leftImage = document.getElementById("left");
+    var topImage = document.getElementById("top");
+    var bottomImage = document.getElementById("bottom");
+    
+    var cubeMap = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, cubeMap);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, rightImage);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, leftImage);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, topImage);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, bottomImage);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, frontImage);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, backImage);
+
+    
+    
+    //var cubeTexMapLoc = gl.getUniformLocation( backgroundShaderProgram, "cubeTexMap" );
+    //gl.uniform1i(cubeMapLoc,0);
+    var skyboxLocation = gl.getUniformLocation(backgroundShaderProgram, "u_skybox");
+    gl.uniform1i(skyboxLocation, 0);
+    
+    var positions = new Float32Array(
+                                     [
+                                      -1, -1,
+                                      1, -1,
+                                      -1,  1,
+                                      -1,  1,
+                                      1, -1,
+                                      1,  1,
+                                      ]);
+    
+    var vBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(positions), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray( vBuffer );
+    
+    //gl.disableVertexAttribArray(vBuffer);
+    
+    var skyboxLocation = gl.getUniformLocation(backgroundShaderProgram, "u_skybox");
+    var viewDirectionProjectionInverseLocation =
+    gl.getUniformLocation(backgroundShaderProgram, "u_viewDirectionProjectionInverse");
+    gl.uniformMatrix4fv(viewDirectionProjectionInverseLocation, false, viewDirectionProjectionInverseMatrix);
+    gl.useProgram( myShaderProgram);
+}
+
+
+
 function load_js_object(){
     var object_name = object_names[objects_loaded];
     var texture_name = js_object_texture_names[(objects_loaded - objects_to_load)];
+    console.log("Texture name = " + texture_name + "for number" + (objects_loaded - objects_to_load) );
     console.log(object_name);
     console.log(((objects_loaded - objects_to_load)));
     console.log(js_object_texture_names[0]);
@@ -387,6 +516,7 @@ function load_js_object(){
     cur_object = new Object();
     cur_object.name = object_name;
     cur_object.textureName = texture_name;
+    console.log("scales of " + objects_loaded + "is " + scales[objects_loaded]);
     cur_object.sx = scales[objects_loaded][0];
     cur_object.sy = scales[objects_loaded][1];
     cur_object.sz = scales[objects_loaded][2];
@@ -399,26 +529,35 @@ function load_js_object(){
     console.log("here: ", cur_object);
     vertexScaling = vertex_scalings[objects_loaded];
     
-    cur_object.vertices = getVertices(); // vertices and faces are defined in object.js
-    var numVertices = cur_object.vertices.length;
+    if (cur_object.name == 'table.js')
+    {
+        cur_object.vertices = getVertices();
+        cur_object.indices = getFaces();
+        cur_object.texCoordinates = getTexture();
+    }
     
-    cur_object.indices = getFaces();
+    else if (cur_object.name == 'floor.js')
+    {
+        cur_object.vertices = floorgetVertices();
+        cur_object.indices = floorgetFaces();
+        cur_object.texCoordinates = floorgetTexture();
+    }
+    
+    //cur_object.vertices = getVertices(); // vertices and faces are defined in object.js
+    var numVertices = cur_object.vertices.length;
+    //cur_object.indices = getFaces();
     var numIndices = cur_object.indices.length;
     var numTriangles = numIndices / 3;
-    
     var faceNormals = getFaceNormals( cur_object.vertices, cur_object.indices, numTriangles );
     
     cur_object.vertexNormals = getVertexNormals(cur_object.vertices, cur_object.indices, faceNormals , numVertices, numIndices);
-    
-    cur_object.texCoordinates = getTexture();
-    
-    //cur_object.myImage = document.getElementById( cur_object.textureName ); //sets image to texture corresponding to the given name in js_object_texture_names
+    cur_object.myImage = document.getElementById( cur_object.textureName ); //sets image to texture corresponding to the given name in js_object_texture_names
     
     all_objects.push(cur_object);
     console.log(all_objects);
     //console.log("pushed up, all_objects[2] is: " + (all_objects[2]).name);
     objects_loaded++;
-    
+    console.log("Objects loaded = " + objects_loaded);
     if (objects_loaded >= (objects_to_load + js_objects_to_load))
     {
         drawObject();
@@ -521,6 +660,7 @@ function process_object() {
         }
 
         numTriangles = faces.length;
+        cur_object.numTriangles = numTriangles;
 
         /* We need to get the values from the vertexNormals */
         for(i = 0; i < v_n.length; i++) {
@@ -946,6 +1086,7 @@ function drawObject() {
             var sx = c_obj.sx;
             var sy = c_obj.sy;
             var sz = c_obj.sz;
+            var num_tri = c_obj.numTriangles;
             tx = c_obj.tx;
             ty = c_obj.ty;
             tz = c_obj.tz;
@@ -1072,10 +1213,22 @@ function drawObject() {
             gl.disableVertexAttribArray(myTexture);
             //gl.enableVertexAttribArray( myTexture );
             
+            /*
+            var vBuffer = gl.getAttribLocation (backgroundShaderProgram, "vPosition" );
+            gl.vertexAttribPointer(vBuffer, 2, gl.FLOAT, false, 0, 0);
+            gl.disableVertexAttribArray(vBuffer);
+             */
+            
             //textureImage = gl.createTexture();
             //gl.bindTexture( gl.TEXTURE_2D, textureImage)
             
             /****** END OF TEXTURE STUFF *************/
+            
+            
+            var vBuffer = gl.createBuffer();
+            gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
+            gl.disableVertexAttribArray(vBuffer);
+            
             
             var normalsBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, normalsBuffer);
@@ -1091,22 +1244,20 @@ function drawObject() {
             var vertexPosition = gl.getAttribLocation(myShaderProgram, "vertexPosition");
             gl.vertexAttribPointer(vertexPosition, 4, gl.FLOAT, false, 0, 0);
             gl.enableVertexAttribArray(vertexPosition);
-            gl.drawElements( gl.TRIANGLES, 3 * numTriangles, gl.UNSIGNED_SHORT, 0 )
+            gl.drawElements( gl.TRIANGLES, 3 * num_tri, gl.UNSIGNED_SHORT, 0 )
 
         }
         
 //this section is meant to run for js loaded objects
-    console.log("All objects: ", all_objects);
         for(i = objects_to_load; i < all_objects.length; i++) {
             gl.uniform1f(textureBooleanUniform, true);
             var c_obj = all_objects[i];
-            console.log(i);
-            console.log("current object = " + c_obj.name);
-            
             var indices = c_obj.indices;
+            var triangleCount = indices.length;
             var vertexNormals = c_obj.vertexNormals;
             var vertices = c_obj.vertices;
             var textureCoordinates = c_obj.texCoordinates;
+            var curImage = c_obj.myImage;
             var a = 0;
             var beta = 0;
             //var ka = c_obj.ka;
@@ -1224,13 +1375,16 @@ function drawObject() {
             
             
             /* Create, bind, and send data to the buffer for the vertices */
+            var vBuffer = gl.createBuffer();
+            gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
+            gl.disableVertexAttribArray(vBuffer);
+            
             var vertexBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
             gl.bufferData(gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW);
             
             var vertexPosition = gl.getAttribLocation(myShaderProgram, "vertexPosition");
             //console.log( "vertex atrrib: " + gl.getAttribLocation(myShaderProgram, "vertexPosition"));
-            
             gl.vertexAttribPointer(vertexPosition, 4, gl.FLOAT, false, 0, 0);
             gl.enableVertexAttribArray(vertexPosition);
             //gl.drawElements( gl.TRIANGLES, 3 * numTriangles, gl.UNSIGNED_SHORT, 0 )
@@ -1248,11 +1402,11 @@ function drawObject() {
             gl.vertexAttribPointer( myTexture, 2, gl.FLOAT, false, 0, 0);
             gl.enableVertexAttribArray( myTexture );
             
-            textureImage = gl.createTexture();
+            var textureImage = gl.createTexture();
             gl.bindTexture( gl.TEXTURE_2D, textureImage)
             gl.pixelStorei( gl.UNPACK_FLIP_Y_WEBGL, true);
             //gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, cur_object.myImage );
-            gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, myImage);
+            gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, curImage);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
             //gl.generateMipmap( gl.TEXTURE_2D);
@@ -1272,7 +1426,7 @@ function drawObject() {
             gl.uniform1i(gl.getUniformLocation(myShaderProgram, "texMap0"), 0);
             //gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
             //var numVertices = 24;
-            gl.drawElements( gl.TRIANGLES, 156, gl.UNSIGNED_BYTE, 0 ); //(IF U16, UNSIGNED_SHORT)
+            gl.drawElements( gl.TRIANGLES, triangleCount, gl.UNSIGNED_BYTE, 0 ); //(IF U16, UNSIGNED_SHORT)
         
             
         }
