@@ -25,7 +25,6 @@ var gl;
 var numVertices;
 var numTriangles;
 var myShaderProgram;
-var backgroundShaderProgram;
 var vertexScaling; /* Used to scale the vertices to make sure the object fits */
 
 var texture_boolean = false;
@@ -133,10 +132,6 @@ function initGL() {
     initBkgnd();
 
     myShaderProgram = initShaders( gl, "vertex-shader", "fragment-shader" );
-    backgroundShaderProgram = initShaders( gl, "vertex-shader-background", "fragment-shader-background");
-    //gl.useProgram( myShaderProgram );
-    //gl.useProgram( backgroundShaderProgram);
-    //setGeometry();
     gl.useProgram( myShaderProgram );
     
     //myImage = document.getElementById( "wood");
@@ -306,9 +301,9 @@ function initGL() {
         // Define bottom plane
         var bottom = -100.0;
         // Define near plane
-        var near = 50.0;
+        var near = 35.0;
         // Define far plane
-        var far = 300.0;
+        var far = 250.0;
 
         /* Set up orthographic projection matrix P_orth using above planes */
         P_ortho = [2.0/ (right-left),
@@ -374,13 +369,12 @@ function initGL() {
     // var object_names = ['coke_bottle.OBJ', 'Irex_obj.obj', 'TV.obj', 'apple.obj'];
     object_names = ['wineglass.obj', 'apple.obj','plate.obj', 'table.js', 'floor.js'];
     js_object_texture_names = [ 'wood', 'red_carpet' ];
-    positions = [[0,20,0],[0, 7, -20], [-40, 20, 0], [-30, 10, 0], [-30, -50, 0] ];
+    positions = [[20,50,-6],[-5, 44, 3], [-5, 44, 3], [-10, 40, -6], [-10, -20, -6] ];
     spins = [[0,0], [0,0], [0,0], [0,0],[0,0]];
     kas = [[0.2,.2,.2], [0.6, 0.1, 0.1], [.9,.9,1.0],[0.2, 0.2, 0.2], [0.2, 0.2, 0.2]];
     kds = [[0.2,.2,.2], [0.6, 0.1, 0.1], [.9,.9,1.0],[0.2, 0.2, 0.2], [0.2, 0.2, 0.2]];
     kss = [[0.2,.2,.2], [0.6, 0.1, 0.1], [.9,.9,1.0],[0.2, 0.2, 0.2], [0.2, 0.2, 0.2]];
     scales = [[2.5, 2.5, 2.5], [.250, .250, 0.250], [0.1,0.1,0.1],[100.0, 100.0, 100.0], [200.0, 200.0, 200.0]];
-    setGeometry();
     load_object();
     //load_js_object();
 };
@@ -401,124 +395,6 @@ function handleBkTex(tex) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.bindTexture(gl.TEXTURE_2D, null);
-}
-
-
-// Fill the buffer with the values that define a quad.
-function setGeometry() {
-    //faces = ['right.jpg', 'left.jpg', 'top.jpg', 'bottom.jpg', 'front.jpg','back.jpg'];
-    
-    
-    var eye = vec3(100.0, 50.0, 50.0);
-    
-    // Define at point (use vec3 in MV.js)
-    var at_point = vec3(0.0, 0.0, 0.0); /* Use the look at point at the origin */
-    
-    // Define vup vector (use vec3 in MV.js)
-    var vup = vec3(0.0, 1.0, 0.0); /* Camera is vertical - May need to change to point at the object better */
-    
-    // Obtain n (use subtract and normalize in MV.js)
-    var n = normalize(subtract(eye, at_point));
-    
-    // Obtain u (use cross and normalize in MV.js)
-    var u = normalize(cross(vup, n));
-    
-    // Obtain v (use cross and normalize in MV.js)
-    var v = normalize(cross(n, u));
-    
-    // Set up Model-View matrix M and send M as uniform to shader
-    var M = [u[0],
-             v[0],
-             n[0],
-             0,
-             u[1],
-             v[1],
-             n[1],
-             0,
-             u[2],
-             v[2],
-             n[2],
-             0,
-             -1*eye[0]*u[0] - eye[1]*u[1] - eye[2]*u[2],
-             -1*eye[0]*v[0] - eye[1]*v[1] - eye[2]*v[2],
-             -1*eye[0]*n[0] - eye[1]*n[1] - eye[2]*n[2],
-             1.0];
-    
-    var modelviewInverseTranspose =     [u[0],
-                                         v[0],
-                                         n[0],
-                                         eye[0],
-                                         u[1],
-                                         v[1],
-                                         n[1],
-                                         eye[1],
-                                         u[2],
-                                         v[2],
-                                         n[2],
-                                         eye[2],
-                                         0.0,
-                                         0.0,
-                                         0.0,
-                                         1.0];
-    
-    viewDirectionProjectionInverseMatrix = modelviewInverseTranspose;
-    
-    
-    
-    gl.useProgram( backgroundShaderProgram);
-    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
-    var vPosition = gl.getAttribLocation(backgroundShaderProgram, "aPosition");
-    
-    var frontImage = document.getElementById("front");
-    var rightImage = document.getElementById("right");
-    var backImage = document.getElementById("back");
-    var leftImage = document.getElementById("left");
-    var topImage = document.getElementById("top");
-    var bottomImage = document.getElementById("bottom");
-    
-    var cubeMap = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_CUBE_MAP, cubeMap);
-    gl.activeTexture(gl.TEXTURE0);
-    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    
-    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, rightImage);
-    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, leftImage);
-    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, topImage);
-    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, bottomImage);
-    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, frontImage);
-    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, backImage);
-
-    
-    
-    //var cubeTexMapLoc = gl.getUniformLocation( backgroundShaderProgram, "cubeTexMap" );
-    //gl.uniform1i(cubeMapLoc,0);
-    var skyboxLocation = gl.getUniformLocation(backgroundShaderProgram, "u_skybox");
-    gl.uniform1i(skyboxLocation, 0);
-    
-    var positions = new Float32Array(
-                                     [
-                                      -1, -1,
-                                      1, -1,
-                                      -1,  1,
-                                      -1,  1,
-                                      1, -1,
-                                      1,  1,
-                                      ]);
-    
-    var vBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(positions), gl.STATIC_DRAW);
-    gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray( vBuffer );
-    
-    //gl.disableVertexAttribArray(vBuffer);
-    
-    var skyboxLocation = gl.getUniformLocation(backgroundShaderProgram, "u_skybox");
-    var viewDirectionProjectionInverseLocation =
-    gl.getUniformLocation(backgroundShaderProgram, "u_viewDirectionProjectionInverse");
-    gl.uniformMatrix4fv(viewDirectionProjectionInverseLocation, false, viewDirectionProjectionInverseMatrix);
-    gl.useProgram( myShaderProgram);
 }
 
 
@@ -1235,21 +1111,10 @@ function drawObject() {
             gl.disableVertexAttribArray(myTexture);
             //gl.enableVertexAttribArray( myTexture );
             
-            /*
-            var vBuffer = gl.getAttribLocation (backgroundShaderProgram, "vPosition" );
-            gl.vertexAttribPointer(vBuffer, 2, gl.FLOAT, false, 0, 0);
-            gl.disableVertexAttribArray(vBuffer);
-             */
-            
             //textureImage = gl.createTexture();
             //gl.bindTexture( gl.TEXTURE_2D, textureImage)
             
             /****** END OF TEXTURE STUFF *************/
-            
-            
-            var vBuffer = gl.createBuffer();
-            gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
-            gl.disableVertexAttribArray(vBuffer);
             
             
             var normalsBuffer = gl.createBuffer();
@@ -1397,9 +1262,7 @@ function drawObject() {
             
             
             /* Create, bind, and send data to the buffer for the vertices */
-            var vBuffer = gl.createBuffer();
-            gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
-            gl.disableVertexAttribArray(vBuffer);
+
             
             var vertexBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);

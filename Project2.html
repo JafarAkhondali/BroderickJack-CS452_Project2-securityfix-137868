@@ -22,35 +22,6 @@
         }
     </style>
     
-<script id="vertex-shader-background" type="x-shader/x-vertex">
-    precision mediump float;
-    attribute vec4 aPosition;
-    varying vec4 vPosition;
-    
-    void main()
-    {
-        vPosition = aPosition;
-        gl_Position = aPosition;
-        gl_Position.z = 1.0;
-    }
-    
-    
- </script>
-    
-<script id="fragment-shader-background" type="x-shader/x-fragment">
-    precision mediump float;
-    uniform samplerCube u_skybox;
-    uniform mat4 u_viewDirectionProjectionInverse;
-    
-    varying vec4 vPosition;
-    void main() {
-        vec4 t = u_viewDirectionProjectionInverse * vPosition;
-        gl_FragColor = textureCube(u_skybox, normalize(t.xyz / t.w));
-    }
-    
-    
-</script>
-    
     
     
 <script id="vertex-shader" type="x-shader/x-vertex">
