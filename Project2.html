@@ -1,4 +1,4 @@
-<!--  Jack Broderick  -->
+<!--  Jack Broderick & Alison Davis Final Project  -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -31,9 +31,6 @@ precision mediump float;
 /* Attributes for each vertices position and normal vector */
 attribute vec3 vertexNormal;
 attribute vec4 vertexPosition;
-
-//attribute vec2 tabletextureCoordinate;
-//varying vec2 ftabletextureCoordinate;
 
 // Set up uniforms for modelview, modelview inverse transpose, and projections
 uniform mat4 modelview;
@@ -82,24 +79,10 @@ varying vec2 ftextureCoordinate;
 uniform bool texture_boolean;
 
 /* Use an if statement to decide if you are using a texture or not */
-uniform float use_texture; /* 1-Texture 0-No Texture */
+uniform float use_texture;
 
 void main() {
     gl_PointSize = 1.0;
-
-    //if(use_texture > 0.0) {
-      //  gl_Position = vertexPosition;
-        //vec4 vi = vertexPosition;
-
-        // vec4 vf = T * Mx * My * Mw * S * vi;
-        // vec4 vf = projection * modelview * vi;
-      //  vec4 vf = Mx * vi;
-
-        //ftextureCoordinate = textureCoordinate;
-
-        //gl_Position = vf;
-        // vColor = myColor;
-    //} else {
 
         // Part 3.2: calculations in main function ---
         vec4 vi = vertexPosition;
@@ -173,12 +156,6 @@ precision mediump float;
 /* UNIFORMS */
 /* Uniform for selecting using a texture */
 uniform float use_texture;
-
-/* Texture varying and uniforms */
-
-
-
-// varying vec3 ka_vary, kd_vary, ks_vary;
 uniform vec3 ka, ks, kd;
 
 /* Shininess for specular light */
@@ -238,6 +215,7 @@ void main() {
         ks_tex[2] = color0.b;
          
         /*
+         //For testing to get textures working
         vec4 color0 = texture2D( texMap0, ftextureCoordinate );
         gl_FragColor.r = color0.r;
         gl_FragColor.g = color0.g;
@@ -419,16 +397,11 @@ void main() {
 <script type="text/javascript" src="floor.js"></script>
 
 
-<img id="texture1", hidden  src="apple_texture.jpg"/>
+
 <img id="wood", hidden src="wood.jpeg"/>
-<img id="gray_carpet", hidden src = "gray_carpet.jpg"/>
 <img id="red_carpet", hidden src = "square_persian.jpg"/>
-<img id="front", hidden src = "front.jpg"/>
-<img id="right", hidden src = "right.jpg"/>
-<img id="left", hidden src = "left.jpg"/>
 <img id="back", hidden src = "back.jpg"/>
-<img id="top", hidden src = "top.jpg"/>
-<img id="bottom", hidden src = "bottom.jpg"/>
+
 
 
 

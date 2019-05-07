@@ -8,7 +8,7 @@ irex: https://www.turbosquid.com/3d-models/3d-indominus-rex-rig-irex-1182227
 coke bottle: https://www.turbosquid.com/FullPreview/Index.cfm/ID/540827
 
 */
-var MOVE_INDEX = 0; /* The index of which object is going to be allowed to move */
+var MOVE_INDEX = 1; /* The index of which object is going to be allowed to move */
 var objects_to_load = 3;
 var js_objects_to_load = 2;
 var objects_loaded = 0;
@@ -76,9 +76,9 @@ var tx, ty, tz; /* The translation in the x, y, and z directions */
 var trans_x;
 var trans_y;
 var trans_x;
-var D_X = 5.0;
-var D_Y = 5.0;
-var D_Z = 5.0;
+var D_X = 1.0;
+var D_Y = 1.0;
+var D_Z = 1.0;
 
 /* Scaling */
 var scale_x = 0.0;
@@ -252,9 +252,9 @@ function initGL() {
         var Is = vec3(.7, .7, 1.0);
 
         /* Incident components for the spotlight */
-        var Ia2 = vec3(0.5, 0.8, 0.8);
-        var Id2 = vec3(0.3, 0.7, 0.7);
-        var Is2 = vec3(0.4, 0.4, 0.4);
+        var Ia2 = vec3(0.5, 0.8, 0.5);
+        var Id2 = vec3(0.3, 0.7, 0.5);
+        var Is2 = vec3(0.4, 0.7, 0.4);
 
         /* Spot light vector of maximum intensity */
         var u_spotlight = normalize(vec3(-0.7, -0.9, 0.0));
@@ -674,156 +674,8 @@ function process_object() {
         console.log("All objects: ", all_objects);
         drawObject();
     }
-    
-    
-    // drawObject();
 }
 
-function createOctahedron() {
-    // This function creates the coordinates for a regular octahedron
-    h = 1;
-    var vertices = [vec4(0.2, 0.0, 0.0, 1.0),
-                vec4(-0.2, 0.0, 0.0, 1.0),
-                vec4(0.0, 0.2, 0.0, 1.0),
-                vec4(0.0, -0.2, 0.0, 1.0),
-                vec4(0.0, 0.0, 0.2, 1.0),
-                vec4(0.0, 0.0, -0.2, 1.0)];
-    var vertices2 = [
-                        // Face 1
-                        vertices[0],
-                        vertices[3],
-                        vertices[4],
-                        // Face 2
-                        vertices[0],
-                        vertices[2],
-                        vertices[4],
-                        // Face 3
-                        vertices[1],
-                        vertices[2],
-                        vertices[4],
-                        // Face 4
-                        vertices[1],
-                        vertices[3],
-                        vertices[4],
-                        // Face 5
-                        vertices[0],
-                        vertices[3],
-                        vertices[5],
-                        // Face 6
-                        vertices[0],
-                        vertices[2],
-                        vertices[5],
-                        // Face 7
-                        vertices[1],
-                        vertices[2],
-                        vertices[5],
-                        // Face 8
-                        vertices[1],
-                        vertices[3],
-                        vertices[5]
-                 ];
-
-    /* Create an array for the coordinates in the texture image corresponding to each of the vertices */
-    var textureCoordinates = [  // Face 1
-                                1.0, 0.0,
-                                0.0, 0.0,
-                                0.5, 1.0,
-                                // Face 2
-                                0.0, 0.0,
-                                1.0, 0.0,
-                                0.5, 1.0,
-                                // Face 3
-                                1.0, 0.0,
-                                0.0, 0.0,
-                                0.5, 1.0,
-                                // Face 4
-                                0.0, 0.0,
-                                1.0, 0.0,
-                                0.5, 1.0,
-                                // Face 5
-                                0.0, 0.0,
-                                1.0, 0.0,
-                                0.5, 1.0,
-                                // Face 6
-                                1.0, 0.0,
-                                0.0, 0.0,
-                                0.5, 1.0,
-                                // Face 7
-                                0.0, 0.0,
-                                1.0, 0.0,
-                                0.5, 1.0,
-                                // Face 8
-                                1.0, 0.0,
-                                0.0, 0.0,
-                                0.5, 1.0
-    ]
-
-    console.log(vertices2);
-    console.log(vertices);
-
-    // Setup the colors of the vertices
-    var vertexColors = [vec4( 0.0, 0.0, 1.0, 1.0), // p0
-                        vec4( 0.0, 1.0, 0.0, 1.0), // p1
-                        vec4( 1.0, 0.0, 0.0, 1.0), // p2
-                        vec4( 1.0, 1.0, 0.0, 1.0), // p3
-                        vec4( 1.0, 0.0, 1.0, 1.0), // p4
-                        vec4( 0.0, 1.0, 1.0, 1.0)]; // p6
-
-    var indexList =    [0, 3, 4,
-                        0, 2, 4,
-                        1, 2, 4,
-                        1, 3, 4,
-                        0, 3, 5,
-                        0, 2, 5,
-                        1, 2, 5,
-                        1, 3, 5];
-
-    /* We need a new index list for the texture coordinates */
-    var indexList2 =    [ // Face 1
-                            0, 1, 2,
-                            // Face 2
-                            3, 4, 5,
-                            // Face 3
-                            6, 7, 8,
-                            // Face 4
-                            9, 10, 11,
-                            // Face 5
-                            12, 13, 14,
-                            // Face 6
-                            15, 16, 17,
-                            // Face 7
-                            18, 19, 20,
-                            // Face 8
-                            21, 22, 23];
-
-
-    /* I want to scale all of the vertices to try to make it visible */
-    vertices2 = flatten(vertices2);
-    // console.log("scaling");
-    for(i = 0; i < vertices2.length; i++) {
-        if((i+1)%4)
-        vertices2[i] = vertices2[i] * 1;
-    }
-    console.log(vertices2);
-/*
-    var vertexBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, vertexBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(vertices2), gl.STATIC_DRAW);
-
-    var myPosition = gl.getAttribLocation( myShaderProgram, "vertexPosition" );
-    gl.vertexAttribPointer(myPosition, 4, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(myPosition);
-
-    /* Create attribute for texture coordinates */
-  /* var textureCoordinateBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordinateBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(textureCoordinates), gl.STATIC_DRAW);
-
-    var texCoordinate = gl.getAttribLocation(myShaderProgram, "textureCoordinate");
-    gl.vertexAttribPointer(texCoordinate, 2, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(texCoordinate);
-    */
-}
 
 // FOLLOWING CODE SKELETON FOR getFaceNormals() NEEDS TO BE COMPLETED
 function getFaceNormals( vertices, indexList, numTriangles ) {
@@ -1250,6 +1102,8 @@ function drawObject() {
             
             /* Send the variables to the unifomrs */
             /*
+             //Don't need these in this case because we will use the textures for the
+             //reflectance coefficients
             gl.uniform3f(KaUniform, ka[0], ka[1], ka[2]);
             gl.uniform3f(KdUniform, kd[0], kd[1], kd[2]);
             gl.uniform3f(KsUniform, ks[0], ks[1], ks[2]);
